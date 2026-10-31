@@ -184,6 +184,39 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
 .rpages{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-start}
 .rpages img{width:min(560px,100%);height:auto;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.45);background:#f4f4ee}
 .ib.aa{font:700 14px/1 var(--f-display);font-size:19px}
+.book2d,.b2-barwrap{display:none}
+body.rm{overflow:auto;background:var(--paper)}
+body.rm .hud,body.rm .hint{display:none}
+body.rm .book2d{display:block;min-height:100%;background:var(--paper);
+  padding-top:calc(14px + env(safe-area-inset-top,0px));padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.b2-page{max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.b2-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.b2-head .chip{box-shadow:none}
+.b2-text{perspective:900px}
+.b2-text .eyebrow{display:block;margin-top:4px}
+.b2-text h1{font:400 44px/1 var(--f-display);margin:6px 0 12px;text-wrap:balance}
+.b2-text p{font-size:17.5px;line-height:1.6;margin:0 0 12px}
+.b2-text ul{margin:0 0 12px;padding-left:20px;font-size:17.5px;line-height:1.55;display:flex;flex-direction:column;gap:6px}
+.b2-box{border:2px dashed var(--ink);border-radius:6px;padding:12px 14px;margin:6px 0 14px;display:flex;flex-direction:column;gap:6px}
+.b2-box p{font-size:16px;margin:0}
+.b2-ask{font:italic 400 26px/1.15 var(--f-display);margin:6px 0 4px}
+.b2-eq{font:600 15px/1.6 var(--f-mono)}
+.b2-text.tn>*{animation:pgIn .5s cubic-bezier(.2,.7,.2,1) both}
+.b2-text.tp>*{animation:pgBack .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes pgIn{from{opacity:0;transform:translateX(46px) rotateY(-14deg)}to{opacity:1;transform:none}}
+@keyframes pgBack{from{opacity:0;transform:translateX(-46px) rotateY(14deg)}to{opacity:1;transform:none}}
+.fig{position:relative;height:min(56vh,480px);border-radius:12px;overflow:hidden;background:var(--desk);touch-action:none}
+body.rm #scene{position:absolute;inset:0;width:100%;height:100%}
+.figbtn{position:absolute;right:10px;top:10px;z-index:2;background:var(--paper)!important;padding:8px 12px!important;font-size:13px!important}
+.fighint{position:absolute;left:10px;bottom:10px;z-index:2;font:600 10.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.4);pointer-events:none}
+.figcap{margin:-4px 0 4px;font-size:14px;color:var(--ink-2);line-height:1.45}
+.figcap i{font-family:var(--f-display);font-size:17px;color:var(--ink)}
+body.rm .card{width:100%;max-height:none;overflow:visible;box-shadow:none}
+body.rm .info{width:100%;box-shadow:none}
+body.rm .b2-barwrap{display:flex;position:fixed;left:0;right:0;bottom:0;justify-content:center;pointer-events:none;z-index:20;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.rm .b2-barwrap .bar{pointer-events:auto}
 @media (max-width:640px){
   .card{width:100%;max-height:34vh;padding:12px 14px 14px;gap:8px}
   .card h1{font-size:28px}
@@ -277,6 +310,16 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
   <div class="rbar"><span class="eyebrow" id="rTitle">Páginas</span><span class="rh">Role para ler · amplie com dois dedos</span><button class="btn" id="rClose" style="padding:9px 14px">Voltar ao 3D</button></div>
   <div class="rpages" id="rPages"></div>
 </div>
+<main class="book2d" id="book2d" aria-label="Livro em modo leitura">
+  <div class="b2-page">
+    <div class="b2-head"><span class="chip"><span class="seal"></span>Biologia Viva</span><span class="chip" id="b2pg">Páginas 6 e 7</span></div>
+    <article class="b2-text" id="b2text"></article>
+    <div class="fig" id="fig"><button class="btn ghost figbtn" id="figFull">⤢ Tela cheia</button><span class="fighint">Gire com o dedo</span></div>
+    <p class="figcap" id="b2cap"></p>
+    <div class="b2-act" id="b2act"></div>
+  </div>
+</main>
+<div class="b2-barwrap" id="b2bar"></div>
 <div class="nogl" id="nogl" hidden>Este aparelho não conseguiu abrir a cena 3D. Tente em outro navegador ou atualize o sistema.</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -474,8 +517,8 @@ function bendFlip(th){
 }
 function setSpread(n,animate,view){
   if(n===curSpread)return;
-  if(!animate||REDUCE||Math.abs(n-curSpread)>1){curSpread=n;redrawStatic();return;}
-  const dir=n>curSpread?1:-1,from=curSpread;curSpread=n;S.turning=true;S.risen=false;hideInfo();updateBar();goView('book');
+  if(!animate||REDUCE||Math.abs(n-curSpread)>1){curSpread=n;redrawStatic();if(RM)renderBookText();return;}
+  const dir=n>curSpread?1:-1,from=curSpread;curSpread=n;S.turning=true;S.risen=false;hideInfo();updateBar();goView('book');if(RM)renderBookText(dir);
   if(dir>0){drawPage(from,'R',flipFC);drawPage(n,'L',flipBC);drawPage(n,'R',rightC);rightT.needsUpdate=true;}
   else{drawPage(from,'L',flipBC);drawPage(n,'R',flipFC);drawPage(n,'L',leftC);leftT.needsUpdate=true;}
   flipFT.needsUpdate=flipBT.needsUpdate=true;
@@ -701,6 +744,10 @@ function runTest(){
 /* ---------- câmera ---------- */
 const cellCenter=()=>CELL_POS.clone().add(new V3(0,H,0));
 function views(){
+  if(RM){
+    const kk=camera.aspect<0.9?1.35:1,c=cellCenter(),bt=new V3(2.53,1.1,0.2);
+    return{book:{pos:bt.clone().add(new V3(-1.0,6.8,6.4).multiplyScalar(kk)),tgt:bt},cell:{pos:c.clone().add(new V3(-1.3,2.3,5.2).multiplyScalar(kk)),tgt:c}};
+  }
   const a=camera.aspect,k=a<0.62?1.85:a<0.9?1.4:1;
   const narrow=innerWidth<=640;
   const portrait=a<0.8,hf=Math.atan(Math.tan(18*Math.PI/180)*a),dist=3.0/Math.tan(hf);
@@ -719,7 +766,8 @@ function goView(name,instant){
   camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:v.pos,t1:v.tgt,s:clock,d:1.5};
 }
 function resize(){
-  const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  const box=RM?document.getElementById('fig'):null;
+  const w=box?box.clientWidth:innerWidth,h=box?box.clientHeight:innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
 }
 addEventListener('resize',()=>{resize();goView(STEPS[S.step].view,true);});
 resize(); goView('book',true);
@@ -728,7 +776,7 @@ resize(); goView('book',true);
 const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
 let down=null;
 function shown(o){while(o){if(!o.visible)return false;o=o.parent;}return true;}
-canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};if(e.isTrusted&&innerWidth<=640&&!S.cardMin){S.cardMin=true;renderCard();}});
+canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};if(e.isTrusted&&!RM&&innerWidth<=640&&!S.cardMin){S.cardMin=true;renderCard();}});
 canvas.addEventListener('pointerup',e=>{
   if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;
   let pageHit=null;
@@ -781,7 +829,7 @@ function openReader(side){
   $('#rClose').focus();
 }
 function closeReader(){$('#reader').hidden=true;$('#rPages').innerHTML='';}
-$('#readBtn').onclick=()=>openReader('L');
+$('#readBtn').onclick=()=>setRM(!RM);
 $('#rClose').onclick=closeReader;
 
 /* ---------- carimbos ---------- */
@@ -857,7 +905,7 @@ function resetLesson(){S.found.clear();S.pred=null;S.flap=false;S.tested=false;S
 function bind(){
   const q=id=>card.querySelector('#'+id);
   if(q('go1'))q('go1').onclick=()=>goStep(1);
-  if(q('demoBtn'))q('demoBtn').onclick=()=>setTimeout(runDemo,0);
+  if(q('demoBtn'))q('demoBtn').onclick=()=>{if(RM)setRM(false);setTimeout(runDemo,0);};
   if(q('propCard'))q('propCard').onclick=openProp;
   bindParts();
   if(q('cutBtn'))q('cutBtn').onclick=()=>{S.cut=!S.cut;applyLook();renderCard();};
@@ -953,14 +1001,14 @@ function frame(now){
   renderer.render(scene,camera);
   if(S.sel&&parts[S.sel].anchor){
     parts[S.sel].anchor.getWorldPosition(tmp);tmp.project(camera);
-    if(tmp.z<1){pin.hidden=false;pin.textContent=ORG[S.sel].nome;pin.style.left=((tmp.x+1)/2*innerWidth)+'px';pin.style.top=((1-tmp.y)/2*innerHeight)+'px';}
+    if(tmp.z<1){pin.hidden=false;pin.textContent=ORG[S.sel].nome;const cr=canvas.getBoundingClientRect(),px=cr.left+(tmp.x+1)/2*cr.width,py=cr.top+(1-tmp.y)/2*cr.height;pin.hidden=py<cr.top||py>cr.bottom;pin.style.left=px+'px';pin.style.top=py+'px';}
     else pin.hidden=true;
   }else pin.hidden=true;
   requestAnimationFrame(frame);
 }
 /* ---------- demonstração automática: um dedo usando a lição ---------- */
 const finger=$('#finger'),UP=new V3(0,1,0),tmp2=new V3();
-var demo=false,dragging=false;let demoRun=0,fx=innerWidth*0.75,fy=innerHeight*0.7;
+var demo=false,dragging=false,RM=false;let demoRun=0,fx=innerWidth*0.75,fy=innerHeight*0.7;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const alive=id=>demo&&id===demoRun;
 function guard(id){if(!alive(id))throw 'stop';}
@@ -1033,7 +1081,54 @@ addEventListener('keydown',()=>stopDemo(),true);
 addEventListener('wheel',()=>stopDemo(),{capture:true,passive:true});
 
 renderCard(); updateBar(); updateStampChip();
-if(REDUCE){rise();}else{runDemo();}
+/* ---------- modo livro (leitura no celular) ---------- */
+const SPREAD_HTML=[
+ {e:'Lição 1 · Citologia',t:'A célula',cap:'<i>Fig. 1</i> Célula animal, modelo fora de escala. Toque em cada parte para ver o que ela faz.',
+  h:'<p>Todo ser vivo é feito de células. Algumas vivem sozinhas, como as bactérias. O corpo humano tem dezenas de trilhões delas.</p><p>Dentro de cada célula há partes com tarefas diferentes, as organelas. Juntas, elas funcionam como uma pequena fábrica.</p><div class="b2-box"><span class="eyebrow">Vocabulário</span><p><b>organela</b> · parte da célula com uma função</p><p><b>citoplasma</b> · o gel que preenche a célula</p><p><b>DNA</b> · as instruções, guardadas no núcleo</p></div><p class="b2-ask">Antes de virar a página:</p><p>onde você acha que a célula produz a energia que usa?</p>'},
+ {e:'Lição 1 · Por dentro',t:'Por dentro',cap:'<i>Fig. 2</i> Célula em corte. Gire para ver as duas camadas da membrana.',
+  h:'<p>A membrana plasmática tem duas camadas. É flexível e escolhe o que entra e o que sai da célula.</p><p>Por dentro, o citoplasma é um gel cheio de organelas. No núcleo, o DNA fica enrolado; o nucléolo ajuda a montar os ribossomos.</p><div class="b2-box"><span class="eyebrow">Você sabia?</span><p>A membrana tem de 7 a 10 nanômetros de espessura: milhares de vezes mais fina que uma folha de papel.</p></div>'},
+ {e:'Lição 1 · Experimento',t:'Prever e testar',cap:'<i>Fig. 3</i> Teste: siga a glicose até a organela. Depois, levante a aba para comprovar.',
+  h:'<p>A célula recebe glicose (um açúcar) e oxigênio. Em algum lugar dentro dela, os dois viram a energia que ela usa.</p><p class="b2-ask">Prever → testar → comprovar</p><div class="b2-box"><span class="eyebrow">A equação</span><p class="b2-eq">glicose + oxigênio → energia (ATP) + gás carbônico + água</p></div>'},
+ {e:'Lição 1 · Resumo',t:'O que ficou',cap:'<i>Fig. 4</i> A célula que você explorou. Volte as páginas quando quiser revisar.',
+  h:'<ul><li>A célula é a menor unidade da vida.</li><li>Cada organela tem uma tarefa, como os setores de uma fábrica.</li><li>A mitocôndria transforma glicose e oxigênio em energia (ATP).</li></ul><p class="b2-ask">Próxima lição:</p><p>célula animal e célula vegetal. O que muda entre elas?</p>'}
+];
+function renderBookText(dir){
+  const sp=SPREAD_HTML[curSpread],el=$('#b2text');
+  el.innerHTML='<span class="eyebrow">'+sp.e+'</span><h1>'+sp.t+'</h1>'+sp.h;
+  $('#b2cap').innerHTML=sp.cap;
+  $('#b2pg').textContent='Páginas '+(6+2*curSpread)+' e '+(7+2*curSpread);
+  el.classList.remove('tn','tp');
+  if(dir){void el.offsetWidth;el.classList.add(dir>0?'tn':'tp');if(RM)window.scrollTo({top:0,behavior:'smooth'});}
+}
+const hudEl=document.querySelector('.hud'),barEl=document.querySelector('.bar'),infoEl=$('#info');
+function setRM(on){
+  RM=on;document.body.classList.toggle('rm',on);
+  if(on){
+    stopDemo();
+    $('#fig').insertBefore(canvas,$('#fig').firstChild);
+    $('#b2act').append(card,infoEl);$('#b2bar').append(barEl);
+    renderBookText();
+  }else{
+    document.body.insertBefore(canvas,document.body.firstChild);
+    hudEl.insertBefore(card,hudEl.querySelector('.grow'));hudEl.append(infoEl);hudEl.append(barEl);
+    window.scrollTo(0,0);
+  }
+  $('#readBtn').textContent=on?'3D':'Aa';
+  $('#readBtn').setAttribute('aria-label',on?'Ver em 3D, tela cheia':'Ler como livro');
+  resize();goView(STEPS[S.step].view,true);updateBar();
+  try{localStorage.setItem('pv-modo',on?'livro':'3d');}catch(e){}
+}
+$('#figFull').onclick=()=>setRM(false);
+let sx=null,sy=null;
+$('#b2text').addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
+$('#b2text').addEventListener('touchend',e=>{
+  if(sx===null)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;sx=null;
+  if(Math.abs(dx)>70&&Math.abs(dy)<50){if(dx<0&&canNext())goStep(S.step+1);else if(dx>0&&S.step>0)goStep(S.step-1);}
+},{passive:true});
+if(window.ResizeObserver)new ResizeObserver(()=>{if(RM){resize();}}).observe($('#fig'));
+let pref=null;try{pref=localStorage.getItem('pv-modo');}catch(e){}
+const startRM=pref?pref==='livro':(innerWidth<=640&&innerHeight>innerWidth);
+if(startRM){setRM(true);rise();}else if(REDUCE){rise();}else{runDemo();}
 requestAnimationFrame(frame);
 })();
 </script>
