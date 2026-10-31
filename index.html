@@ -54,7 +54,8 @@ body{background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size
 .card{position:relative}
 .card .eyebrow{padding-right:92px}
 .ctog{position:absolute;top:10px;right:10px;appearance:none;border:1px solid var(--rule);background:var(--paper-2);color:var(--ink);font:600 12px/1 var(--f-body);padding:7px 10px;border-radius:999px;cursor:pointer}
-.card.min{padding-top:12px;padding-bottom:12px}
+.card.min{padding-top:14px;padding-bottom:14px}
+.card.min .ctog{top:50%;transform:translateY(-50%)}
 .card.min > *:not(.eyebrow):not(.ctog){display:none!important}
 .eyebrow{font:600 11px/1.2 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
 .card h1{font:400 34px/1 var(--f-display);margin:0;text-wrap:balance}
