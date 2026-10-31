@@ -52,8 +52,8 @@ body{background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size
 
 .card{width:min(390px,100%);max-height:min(56vh,540px);overflow:auto;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:0 12px 32px rgba(20,30,40,.26);padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px}
 .card{position:relative}
-.card .eyebrow{padding-right:92px}
-.ctog{position:absolute;top:10px;right:10px;appearance:none;border:1px solid var(--rule);background:var(--paper-2);color:var(--ink);font:600 12px/1 var(--f-body);padding:7px 10px;border-radius:999px;cursor:pointer}
+.card .eyebrow{padding-right:112px;min-height:22px}
+.ctog{position:absolute;top:8px;right:8px;appearance:none;border:1px solid var(--rule);background:var(--paper-2);color:var(--ink);font:600 13px/1 var(--f-body);padding:11px 14px;min-height:38px;border-radius:999px;cursor:pointer}
 .card.min{padding-top:14px;padding-bottom:14px}
 .card.min .ctog{top:50%;transform:translateY(-50%)}
 .card.min > *:not(.eyebrow):not(.ctog){display:none!important}
@@ -155,7 +155,7 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
 @keyframes rip{to{transform:scale(3.4);opacity:0}}
 .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#d23c3c;margin-right:6px;vertical-align:1px;animation:blink 1.2s infinite}
 @keyframes blink{50%{opacity:.25}}
-.chip.btnchip{cursor:pointer;background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.btnchip{cursor:pointer;background:var(--ink);color:var(--paper);border-color:var(--ink);min-height:38px;padding:10px 14px}
 .prop{position:fixed;top:0;bottom:0;right:0;width:min(470px,94vw);background:var(--paper);box-shadow:-8px 0 30px rgba(10,15,25,.35);overflow:auto;display:flex;flex-direction:column;gap:16px;
   padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-left:20px}
 .prop h2{margin:0;font:400 34px/1.02 var(--f-display);text-wrap:balance}
@@ -185,6 +185,7 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
 .rpages img{width:min(560px,100%);height:auto;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.45);background:#f4f4ee}
 .ib.aa{font:700 14px/1 var(--f-display);font-size:19px}
 .book2d,.b2-barwrap{display:none}
+.pin{z-index:45}.scrim{z-index:40}.drawer,.prop{z-index:50}.stamp{z-index:55}.finger{z-index:60}.reader{z-index:70}
 body.rm{overflow:auto;background:var(--paper)}
 body.rm .hud,body.rm .hint{display:none}
 body.rm .book2d{display:block;min-height:100%;background:var(--paper);
@@ -208,7 +209,7 @@ body.rm .book2d{display:block;min-height:100%;background:var(--paper);
 @keyframes pgBack{from{opacity:0;transform:translateX(-46px) rotateY(14deg)}to{opacity:1;transform:none}}
 .fig{position:relative;height:min(56vh,480px);border-radius:12px;overflow:hidden;background:var(--desk);touch-action:none}
 body.rm #scene{position:absolute;inset:0;width:100%;height:100%}
-.figbtn{position:absolute;right:10px;top:10px;z-index:2;background:var(--paper)!important;padding:8px 12px!important;font-size:13px!important}
+.figbtn{position:absolute;right:10px;top:10px;z-index:2;background:var(--paper)!important;padding:11px 14px!important;font-size:13px!important;min-height:40px}
 .fighint{position:absolute;left:10px;bottom:10px;z-index:2;font:600 10.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.4);pointer-events:none}
 .figcap{margin:-4px 0 4px;font-size:14px;color:var(--ink-2);line-height:1.45}
 .figcap i{font-family:var(--f-display);font-size:17px;color:var(--ink)}
@@ -518,7 +519,7 @@ function bendFlip(th){
 function setSpread(n,animate,view){
   if(n===curSpread)return;
   if(!animate||REDUCE||Math.abs(n-curSpread)>1){curSpread=n;redrawStatic();if(RM)renderBookText();return;}
-  const dir=n>curSpread?1:-1,from=curSpread;curSpread=n;S.turning=true;S.risen=false;hideInfo();updateBar();goView('book');if(RM)renderBookText(dir);
+  const dir=n>curSpread?1:-1,from=curSpread;curSpread=n;S.turning=true;document.body.dataset.turning='1';S.risen=false;hideInfo();updateBar();goView('book');if(RM)renderBookText(dir);
   if(dir>0){drawPage(from,'R',flipFC);drawPage(n,'L',flipBC);drawPage(n,'R',rightC);rightT.needsUpdate=true;}
   else{drawPage(from,'L',flipBC);drawPage(n,'R',flipFC);drawPage(n,'L',leftC);leftT.needsUpdate=true;}
   flipFT.needsUpdate=flipBT.needsUpdate=true;
@@ -529,7 +530,7 @@ function setSpread(n,animate,view){
       if(dir>0){drawPage(n,'L',leftC);leftT.needsUpdate=true;}else{drawPage(n,'R',rightC);rightT.needsUpdate=true;}
       cell.visible=true;
       if(view)goView(view);
-      task(0.05,1.2,t=>setRise(t),()=>{setRise(1);S.risen=true;S.turning=false;updateBar();});
+      task(0.05,1.2,t=>setRise(t),()=>{setRise(1);S.risen=true;S.turning=false;delete document.body.dataset.turning;updateBar();if(S.pending!=null){const q=S.pending;S.pending=null;goStep(q);}});
     });
   });
 }
@@ -934,7 +935,8 @@ function updateBar(){
   [...dots.children].forEach((d,i)=>{d.className=i===S.step?'on':i<S.step?'done':'';});
 }
 function goStep(n){
-  if(n<0||n>=STEPS.length||S.testing||S.turning)return;
+  if(S.turning&&n>=0&&n<STEPS.length){S.pending=n;return;}
+  if(n<0||n>=STEPS.length||S.testing)return;
   if(n===4&&!S.pred)n=3;
   S.step=n;
   if(n===2&&!S.cut){S.cut=true;}
