@@ -312,7 +312,7 @@ scene.background=new THREE.Color(0x6b878c);
 const camera=new THREE.PerspectiveCamera(36,1,0.1,120);
 const controls=new THREE.OrbitControls(camera,canvas);
 controls.enableDamping=true; controls.dampingFactor=.08; controls.enablePan=false;
-controls.minDistance=2.6; controls.maxDistance=24; controls.maxPolarAngle=1.38;
+controls.minDistance=2.6; controls.maxDistance=40; controls.maxPolarAngle=1.38;
 
 scene.add(new THREE.HemisphereLight(0xffffff,0x56706f,.78));
 const sun=new THREE.DirectionalLight(0xfff4e2,.72);
@@ -344,7 +344,7 @@ const aniso=renderer.capabilities.getMaxAnisotropy();
 const leftT=new THREE.CanvasTexture(leftC), rightT=new THREE.CanvasTexture(rightC);
 [leftT,rightT].forEach(t=>{t.anisotropy=aniso;});
 function pagePlane(tex,x){const m=new THREE.Mesh(new THREE.PlaneGeometry(4.96,6.66),new THREE.MeshLambertMaterial({map:tex}));m.rotation.x=-Math.PI/2;m.position.set(x,PAGE_Y+0.002,0);m.receiveShadow=true;book.add(m);return m;}
-pagePlane(leftT,-2.53); pagePlane(rightT,2.53);
+const leftPM=pagePlane(leftT,-2.53), rightPM=pagePlane(rightT,2.53);
 
 function wrap(ctx,text,x,y,maxW,lh){
   const words=text.split(' ');let line='';
@@ -358,8 +358,8 @@ function paperBase(ctx,W,H,gutterLeft){
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
 }
 const DISPLAY='"Instrument Serif", Georgia, serif', BODY='"Atkinson Hyperlegible", "Segoe UI", sans-serif', MONO='"IBM Plex Mono", Menlo, monospace';
-function drawLeft(){
-  const c=leftC,ctx=c.getContext('2d'),W=c.width,H=c.height,X=96,MW=W-190;
+function drawL0(c){
+  const ctx=c.getContext('2d'),W=c.width,H=c.height,X=96,MW=W-190;
   paperBase(ctx,W,H,false);
   ctx.fillStyle='#56607a';ctx.font='600 26px '+MONO;ctx.fillText('LIÇÃO 1  ·  CITOLOGIA',X,130);
   ctx.fillStyle='#1d2742';ctx.font='132px '+DISPLAY;ctx.fillText('A célula',X,270);
@@ -381,25 +381,107 @@ function drawLeft(){
   ctx.strokeStyle='#c3c7bd';ctx.lineWidth=2;
   for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(X,y+30+i*52);ctx.lineTo(X+MW,y+30+i*52);ctx.stroke();}
   ctx.fillStyle='#56607a';ctx.font='600 24px '+MONO;ctx.fillText('6',X,H-70);
-  leftT.needsUpdate=true;
 }
-function drawRight(){
-  const c=rightC,ctx=c.getContext('2d'),W=c.width,H=c.height;
+function figPage(c,fig,l1,l2,n){
+  const ctx=c.getContext('2d'),W=c.width,H=c.height;
   paperBase(ctx,W,H,true);
   ctx.strokeStyle='rgba(29,39,66,.07)';ctx.lineWidth=2;
   for(let x=60;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,60);ctx.lineTo(x,H-160);ctx.stroke();}
   for(let y=60;y<H-150;y+=48){ctx.beginPath();ctx.moveTo(60,y);ctx.lineTo(W-60,y);ctx.stroke();}
-  ctx.fillStyle='#1d2742';ctx.font='italic 40px '+DISPLAY;ctx.fillText('Fig. 1',110,H-100);
+  ctx.fillStyle='#1d2742';ctx.font='italic 40px '+DISPLAY;ctx.fillText(fig,110,H-100);
   ctx.font='28px '+BODY;ctx.fillStyle='#56607a';
-  ctx.fillText('Célula animal, modelo fora de escala.',220,H-100);
-  ctx.fillText('Toque em cada parte para ver o que ela faz.',220,H-60);
-  ctx.font='600 24px '+MONO;ctx.fillText('7',W-110,H-70);
-  rightT.needsUpdate=true;
+  ctx.fillText(l1,230,H-100);ctx.fillText(l2,230,H-60);
+  ctx.font='600 24px '+MONO;ctx.fillText(String(n),W-200,H-70);
 }
-drawLeft();drawRight();
+function textPage(c,eyebrow,title,n,body){
+  const ctx=c.getContext('2d'),W=c.width,H=c.height,X=96,MW=W-190;
+  paperBase(ctx,W,H,false);
+  ctx.fillStyle='#56607a';ctx.font='600 26px '+MONO;ctx.fillText(eyebrow,X,130);
+  ctx.fillStyle='#1d2742';ctx.font='120px '+DISPLAY;ctx.fillText(title,X,262);
+  ctx.font='32px '+BODY;body(ctx,X,340,MW);
+  ctx.fillStyle='#56607a';ctx.font='600 24px '+MONO;ctx.fillText(String(n),X+150,H-70);
+}
+function boxed(ctx,X,y,MW,h,label){ctx.strokeStyle='#1d2742';ctx.lineWidth=3;ctx.setLineDash([10,8]);ctx.strokeRect(X,y,MW,h);ctx.setLineDash([]);ctx.fillStyle='#56607a';ctx.font='600 24px '+MONO;ctx.fillText(label,X+30,y+50);ctx.fillStyle='#1d2742';ctx.font='30px '+BODY;}
+const drawR0=c=>figPage(c,'Fig. 1','Célula animal, modelo fora de escala.','Toque em cada parte para ver o que ela faz.',7);
+const drawL1=c=>textPage(c,'LIÇÃO 1  ·  POR DENTRO','Por dentro',8,(ctx,X,y,MW)=>{
+  y=wrap(ctx,'A membrana plasmática tem duas camadas. É flexível e escolhe o que entra e o que sai da célula.',X,y,MW,46);y+=18;
+  y=wrap(ctx,'Por dentro, o citoplasma é um gel cheio de organelas. No núcleo, o DNA fica enrolado; o nucléolo ajuda a montar os ribossomos.',X,y,MW,46);y+=30;
+  boxed(ctx,X,y,MW,220,'VOCÊ SABIA?');
+  wrap(ctx,'A membrana tem de 7 a 10 nanômetros de espessura: milhares de vezes mais fina que uma folha de papel.',X+30,y+100,MW-60,42);
+});
+const drawR1=c=>figPage(c,'Fig. 2','Célula em corte.','Gire para ver as duas camadas da membrana.',9);
+const drawL2=c=>textPage(c,'LIÇÃO 1  ·  EXPERIMENTO','Prever e testar',10,(ctx,X,y,MW)=>{
+  y=wrap(ctx,'A célula recebe glicose (um açúcar) e oxigênio. Em algum lugar dentro dela, os dois viram a energia que ela usa.',X,y,MW,46);y+=24;
+  ctx.font='italic 52px '+DISPLAY;ctx.fillText('Prever  →  testar  →  comprovar',X,y+20);y+=90;
+  ctx.font='32px '+BODY;ctx.fillText('Minha previsão:',X,y);
+  ctx.strokeStyle='#c3c7bd';ctx.lineWidth=2;for(let i=0;i<2;i++){ctx.beginPath();ctx.moveTo(X,y+50+i*52);ctx.lineTo(X+MW,y+50+i*52);ctx.stroke();}
+  y+=170;boxed(ctx,X,y,MW,170,'A EQUAÇÃO');
+  ctx.font='600 27px '+MONO;ctx.fillText('glicose + oxigênio  →',X+30,y+100);ctx.fillText('energia (ATP) + gás carbônico + água',X+30,y+142);
+});
+const drawR2=c=>figPage(c,'Fig. 3','Teste: siga a glicose até a organela.','Depois, levante a aba para comprovar.',11);
+const drawL3=c=>textPage(c,'LIÇÃO 1  ·  RESUMO','O que ficou',12,(ctx,X,y,MW)=>{
+  ['A célula é a menor unidade da vida.','Cada organela tem uma tarefa, como os setores de uma fábrica.','A mitocôndria transforma glicose e oxigênio em energia (ATP).'].forEach(t=>{ctx.fillText('•',X,y);y=wrap(ctx,t,X+34,y,MW-34,46);y+=16;});
+  y+=40;ctx.font='italic 52px '+DISPLAY;ctx.fillText('Próxima lição:',X,y);
+  ctx.font='32px '+BODY;wrap(ctx,'célula animal e célula vegetal. O que muda entre elas?',X,y+56,MW,46);
+});
+const drawR3=c=>figPage(c,'Fig. 4','A célula que você explorou.','Volte as páginas quando quiser revisar.',13);
+const SPREADS=[[drawL0,drawR0],[drawL1,drawR1],[drawL2,drawR2],[drawL3,drawR3]];
+const SPREAD_OF=[0,0,1,2,2,3];
+let curSpread=0;
+function dogEar(ctx,W,H,left){
+  const e=120;ctx.save();ctx.fillStyle='#dcdccf';ctx.strokeStyle='#8f97a6';ctx.lineWidth=3;ctx.beginPath();
+  if(left){ctx.moveTo(0,H-e);ctx.lineTo(e,H);ctx.lineTo(0,H);}else{ctx.moveTo(W,H-e);ctx.lineTo(W-e,H);ctx.lineTo(W,H);}
+  ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle='#56607a';ctx.font='600 30px '+MONO;ctx.fillText(left?'‹':'›',left?18:W-38,H-18);ctx.restore();
+}
+function drawPage(sp,side,c){
+  SPREADS[sp][side==='L'?0:1](c);
+  const ctx=c.getContext('2d');
+  if(side==='L'&&sp>0)dogEar(ctx,c.width,c.height,true);
+  if(side==='R'&&sp<SPREADS.length-1)dogEar(ctx,c.width,c.height,false);
+}
+function redrawStatic(){drawPage(curSpread,'L',leftC);leftT.needsUpdate=true;drawPage(curSpread,'R',rightC);rightT.needsUpdate=true;}
+
+/* folha que vira */
+const PW=4.96,PDp=6.66,SEG=40;
+const flipFC=pageCanvas(1024,1400),flipBC=pageCanvas(1024,1400);
+const flipFT=new THREE.CanvasTexture(flipFC),flipBT=new THREE.CanvasTexture(flipBC);
+flipBT.wrapS=THREE.RepeatWrapping;flipBT.repeat.x=-1;flipBT.offset.x=1;
+flipFT.anisotropy=flipBT.anisotropy=aniso;
+const flipGeo=new THREE.PlaneGeometry(PW,PDp,SEG,1);flipGeo.rotateX(-Math.PI/2);flipGeo.translate(PW/2,0,0);
+const flipBase=flipGeo.attributes.position.array.slice();
+const flip=new THREE.Group();flip.position.set(0,PAGE_Y+0.012,0);flip.visible=false;
+[new THREE.MeshLambertMaterial({map:flipFT,side:THREE.FrontSide}),new THREE.MeshLambertMaterial({map:flipBT,side:THREE.BackSide})].forEach(m=>{const me=new THREE.Mesh(flipGeo,m);me.castShadow=true;flip.add(me);});
+book.add(flip);
+function bendFlip(th){
+  const k=0.75*Math.sin(th),step=PW/SEG,X=[0],Y=[0];let x=0,y=0;
+  for(let j=1;j<=SEG;j++){const a=th-k*((j-0.5)/SEG);x+=Math.cos(a)*step;y+=Math.sin(a)*step;X.push(x);Y.push(y);}
+  const a=flipGeo.attributes.position.array;
+  for(let i=0;i<a.length/3;i++){const j=Math.round(flipBase[i*3]/step);a[i*3]=X[j];a[i*3+1]=Y[j];a[i*3+2]=flipBase[i*3+2];}
+  flipGeo.attributes.position.needsUpdate=true;flipGeo.computeVertexNormals();
+}
+function setSpread(n,animate,view){
+  if(n===curSpread)return;
+  if(!animate||REDUCE||Math.abs(n-curSpread)>1){curSpread=n;redrawStatic();return;}
+  const dir=n>curSpread?1:-1,from=curSpread;curSpread=n;S.turning=true;S.risen=false;hideInfo();updateBar();goView('book');
+  if(dir>0){drawPage(from,'R',flipFC);drawPage(n,'L',flipBC);drawPage(n,'R',rightC);rightT.needsUpdate=true;}
+  else{drawPage(from,'L',flipBC);drawPage(n,'R',flipFC);drawPage(n,'L',leftC);leftT.needsUpdate=true;}
+  flipFT.needsUpdate=flipBT.needsUpdate=true;
+  task(0,0.45,t=>setRise(1-t),()=>{
+    cell.visible=false;bendFlip(dir>0?0:Math.PI);flip.visible=true;
+    task(0,1.15,t=>{const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;bendFlip(dir>0?e*Math.PI:Math.PI*(1-e));},()=>{
+      flip.visible=false;
+      if(dir>0){drawPage(n,'L',leftC);leftT.needsUpdate=true;}else{drawPage(n,'R',rightC);rightT.needsUpdate=true;}
+      cell.visible=true;
+      if(view)goView(view);
+      task(0.05,1.2,t=>setRise(t),()=>{setRise(1);S.risen=true;S.turning=false;updateBar();});
+    });
+  });
+}
+redrawStatic();
 if(document.fonts&&document.fonts.load){
   Promise.all([document.fonts.load('60px "Instrument Serif"'),document.fonts.load('italic 60px "Instrument Serif"'),document.fonts.load('30px "Atkinson Hyperlegible"'),document.fonts.load('600 24px "IBM Plex Mono"')])
-    .then(()=>{drawLeft();drawRight();}).catch(()=>{});
+    .then(()=>{redrawStatic();}).catch(()=>{});
 }
 
 /* ---------- célula ---------- */
@@ -609,11 +691,13 @@ const cellCenter=()=>CELL_POS.clone().add(new V3(0,H,0));
 function views(){
   const a=camera.aspect,k=a<0.62?1.85:a<0.9?1.4:1;
   const narrow=innerWidth<=640;
-  const bookT=narrow?new V3(1.3,3.1,0.2):new V3(-0.55,0.5,0.6);
+  const portrait=a<0.8,hf=Math.atan(Math.tan(18*Math.PI/180)*a),dist=3.0/Math.tan(hf);
+  const bookT=portrait?new V3(2.53,0.5,-1.4):narrow?new V3(1.3,3.1,0.2):new V3(-0.55,0.5,0.6);
+  const bookP=portrait?bookT.clone().add(new V3(0,dist*0.95,dist*0.31)):bookT.clone().add(new V3(0.15,9.3*k,8.0*k));
   const cellT=cellCenter().add(narrow?new V3(0,0.8,0):new V3(-0.95,0.15,0));
   return{
-    book:{pos:bookT.clone().add(new V3(0.15,9.3*k,8.0*k)),tgt:bookT},
-    cell:{pos:cellT.clone().add(new V3(-1.6,2.5,5.6).multiplyScalar(k)),tgt:cellT}
+    book:{pos:bookP,tgt:bookT},
+    cell:{pos:cellT.clone().add((portrait?new V3(0,3.0,6.0):new V3(-1.6,2.5,5.6)).multiplyScalar(k)),tgt:cellT}
   };
 }
 let camTween=null;
@@ -635,6 +719,15 @@ function shown(o){while(o){if(!o.visible)return false;o=o.parent;}return true;}
 canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};if(e.isTrusted&&innerWidth<=640&&!S.cardMin){S.cardMin=true;renderCard();}});
 canvas.addEventListener('pointerup',e=>{
   if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;
+  if(moved<=7&&!S.testing&&!S.turning){
+    const rr=canvas.getBoundingClientRect();
+    ptr.set((e.clientX-rr.left)/rr.width*2-1,-(e.clientY-rr.top)/rr.height*2+1);ray.setFromCamera(ptr,camera);
+    const ph=ray.intersectObjects([leftPM,rightPM],false)[0];
+    if(ph&&ph.uv){
+      if(ph.object===rightPM&&ph.uv.x>0.82&&ph.uv.y<0.13&&canNext()){goStep(S.step+1);return;}
+      if(ph.object===leftPM&&ph.uv.x<0.18&&ph.uv.y<0.13&&S.step>0){goStep(S.step-1);return;}
+    }
+  }
   if(moved>7||!S.risen||S.testing)return;
   const r=canvas.getBoundingClientRect();
   ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
@@ -684,7 +777,7 @@ function renderCard(){
   if(s===0){
     h='<span class="eyebrow">Lição 1 · Citologia</span><h1>A célula <i>sai da página</i></h1>'+
       '<p>Todo ser vivo é feito de células. Esta é uma célula animal, aumentada umas 5 mil vezes.</p>'+
-      '<p class="muted">Gire o livro com o dedo. Quando estiver pronto, avance para explorar a célula por dentro.</p>'+
+      '<p class="muted">Gire o livro com o dedo. Para virar a página, use a seta › ou toque no canto dobrado.</p>'+
       '<div class="row"><button class="btn" id="go1">Explorar a célula</button><button class="btn ghost" id="demoBtn">Ver demonstração</button></div><button class="btn ghost" id="propCard" style="align-self:flex-start">Proposta para a escola</button>';
   }else if(s===1){
     const n=S.found.size;
@@ -756,19 +849,20 @@ function canNext(){ if(S.step===3)return !!S.pred; if(S.step===4)return S.tested
 function updateBar(){
   $('#capN').innerHTML=demo?'<span class="live-dot"></span>Demonstração<span class=\"lnum\"> · toque para usar</span>':'Passo '+(S.step+1)+' de '+STEPS.length;
   $('#capT').textContent=STEPS[S.step].cap;
-  $('#prevBtn').disabled=S.step===0||S.testing;
-  $('#nextBtn').disabled=!canNext()||S.testing;
+  $('#prevBtn').disabled=S.step===0||S.testing||S.turning;
+  $('#nextBtn').disabled=!canNext()||S.testing||S.turning;
   [...dots.children].forEach((d,i)=>{d.className=i===S.step?'on':i<S.step?'done':'';});
 }
 function goStep(n){
-  if(n<0||n>=STEPS.length||S.testing)return;
+  if(n<0||n>=STEPS.length||S.testing||S.turning)return;
   if(n===4&&!S.pred)n=3;
   S.step=n;
   if(n===2&&!S.cut){S.cut=true;}
   if(n<2&&S.cut&&!S.tested){S.cut=false;}
   if(n!==1&&n!==2&&S.sel){S.sel=null;hideInfo();}
   applyLook();
-  goView(STEPS[n].view);
+  if(Math.abs(SPREAD_OF[n]-curSpread)===1&&!REDUCE){setSpread(SPREAD_OF[n],true,STEPS[n].view);}
+  else{setSpread(SPREAD_OF[n],false);goView(STEPS[n].view);}
   eqStage=0; renderCard(); updateBar();
   if(n===4&&!S.tested)setTimeout(runTest,REDUCE?0:900);
   $('#hint').hidden=n!==0&&n!==1;
@@ -834,7 +928,7 @@ function frame(now){
 }
 /* ---------- demonstração automática: um dedo usando a lição ---------- */
 const finger=$('#finger'),UP=new V3(0,1,0),tmp2=new V3();
-var demo=false;let demoRun=0,fx=innerWidth*0.75,fy=innerHeight*0.7;
+var demo=false,dragging=false;let demoRun=0,fx=innerWidth*0.75,fy=innerHeight*0.7;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const alive=id=>demo&&id===demoRun;
 function guard(id){if(!alive(id))throw 'stop';}
@@ -849,6 +943,7 @@ async function tap(id){
   await wait(170);finger.classList.remove('press');guard(id);
 }
 async function tapEl(sel,id){
+  await until(()=>!S.turning,id);
   const el=document.querySelector(sel);if(!el)return;
   const b=el.getBoundingClientRect();
   await moveTo(b.left+Math.min(b.width*0.5,70),b.top+b.height*0.6,650,id);
@@ -860,13 +955,14 @@ async function tapPart(p,id){
   await tap(id);select(p);await wait(1500);guard(id);
 }
 async function drag(dx,angle,dur,id){
-  await until(()=>!camTween,id);
+  await until(()=>!camTween&&!S.turning,id);
+  dragging=true;
   finger.classList.add('press');const x0=fx,y0=fy;let last=0;
   try{await anim(dur,id,e=>{
     fx=x0+dx*e;fy=y0-Math.sin(e*Math.PI)*14;placeFinger();
     const a=angle*e,d=a-last;last=a;
     const off=camera.position.clone().sub(controls.target);off.applyAxisAngle(UP,d);camera.position.copy(controls.target).add(off);
-  });}finally{finger.classList.remove('press');}
+  });}finally{finger.classList.remove('press');dragging=false;}
 }
 async function runDemo(){
   const id=++demoRun;demo=true;closeDrawer();S.cardMin=false;
@@ -898,6 +994,7 @@ async function runDemo(){
 }
 function stopDemo(){
   if(!demo)return;demo=false;demoRun++;finger.hidden=true;finger.classList.remove('press');updateBar();
+  if(dragging){dragging=false;goView(STEPS[S.step].view);}
 }
 addEventListener('pointerdown',e=>{if(e.isTrusted)stopDemo();},true);
 addEventListener('keydown',()=>stopDemo(),true);
