@@ -177,6 +177,13 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
 .price{border:1.5px dashed var(--ink);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--note)}
 .price b{font:400 36px/1 var(--f-display)}
 .price p{font-size:14px}
+.reader{position:fixed;inset:0;z-index:70;background:rgba(15,22,35,.94);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom;
+  padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.rbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;justify-content:space-between;background:var(--paper);border-radius:999px;padding:6px 6px 6px 16px;margin:0 auto 14px;max-width:1140px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.rbar .rh{font-size:12.5px;color:var(--ink-2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpages{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-start}
+.rpages img{width:min(560px,100%);height:auto;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.45);background:#f4f4ee}
+.ib.aa{font:700 14px/1 var(--f-display);font-size:19px}
 @media (max-width:640px){
   .card{width:100%;max-height:34vh;padding:12px 14px 14px;gap:8px}
   .card h1{font-size:28px}
@@ -219,6 +226,7 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
     <button class="ib" id="prevBtn" aria-label="Passo anterior">‹</button>
     <div class="cap"><span class="n" id="capN"></span><span class="t" id="capT"></span></div>
     <div class="dots" id="dots"></div>
+    <button class="ib aa" id="readBtn" aria-label="Ler a página">Aa</button>
     <button class="ib" id="nextBtn" aria-label="Próximo passo">›</button>
   </nav>
 </div>
@@ -265,6 +273,10 @@ details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;g
   <p>Uma conversa de 30 minutos com a coordenação e o professor de Biologia, com demonstração ao vivo. Responda a quem te enviou este link.</p>
   <div class="row"><button class="btn" id="propTry">Experimentar a cena agora</button></div>
 </aside>
+<div class="reader" id="reader" hidden role="dialog" aria-label="Leitura das páginas">
+  <div class="rbar"><span class="eyebrow" id="rTitle">Páginas</span><span class="rh">Role para ler · amplie com dois dedos</span><button class="btn" id="rClose" style="padding:9px 14px">Voltar ao 3D</button></div>
+  <div class="rpages" id="rPages"></div>
+</div>
 <div class="nogl" id="nogl" hidden>Este aparelho não conseguiu abrir a cena 3D. Tente em outro navegador ou atualize o sistema.</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -311,8 +323,8 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x6b878c);
 const camera=new THREE.PerspectiveCamera(36,1,0.1,120);
 const controls=new THREE.OrbitControls(camera,canvas);
-controls.enableDamping=true; controls.dampingFactor=.08; controls.enablePan=false;
-controls.minDistance=2.6; controls.maxDistance=40; controls.maxPolarAngle=1.38;
+controls.enableDamping=true; controls.dampingFactor=.08; controls.enablePan=true; controls.screenSpacePanning=true;
+controls.minDistance=1.2; controls.maxDistance=40; controls.maxPolarAngle=1.38;
 
 scene.add(new THREE.HemisphereLight(0xffffff,0x56706f,.78));
 const sun=new THREE.DirectionalLight(0xfff4e2,.72);
@@ -719,10 +731,12 @@ function shown(o){while(o){if(!o.visible)return false;o=o.parent;}return true;}
 canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};if(e.isTrusted&&innerWidth<=640&&!S.cardMin){S.cardMin=true;renderCard();}});
 canvas.addEventListener('pointerup',e=>{
   if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;
+  let pageHit=null;
   if(moved<=7&&!S.testing&&!S.turning){
     const rr=canvas.getBoundingClientRect();
     ptr.set((e.clientX-rr.left)/rr.width*2-1,-(e.clientY-rr.top)/rr.height*2+1);ray.setFromCamera(ptr,camera);
     const ph=ray.intersectObjects([leftPM,rightPM],false)[0];
+    pageHit=ph||null;
     if(ph&&ph.uv){
       if(ph.object===rightPM&&ph.uv.x>0.82&&ph.uv.y<0.13&&canNext()){goStep(S.step+1);return;}
       if(ph.object===leftPM&&ph.uv.x<0.18&&ph.uv.y<0.13&&S.step>0){goStep(S.step-1);return;}
@@ -733,7 +747,7 @@ canvas.addEventListener('pointerup',e=>{
   ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
   ray.setFromCamera(ptr,camera);
   const hits=ray.intersectObjects(pick,false).filter(h=>shown(h.object));
-  if(!hits.length){select(null);return;}
+  if(!hits.length){if(pageHit){openReader(pageHit.object===leftPM?'L':'R');return;}select(null);return;}
   const h=hits.find(h=>h.object.userData.part!=='membrana')||hits[0];
   select(h.object.userData.part);
 });
@@ -751,6 +765,24 @@ function select(id){
 }
 function hideInfo(){$('#info').hidden=true;$('#pin').hidden=true;}
 $('#infoClose').onclick=()=>select(null);
+
+/* ---------- leitor das páginas ---------- */
+function pageImage(sp,side){
+  const c=document.createElement('canvas');c.width=2048;c.height=2800;const ctx=c.getContext('2d');ctx.scale(2,2);
+  drawPage(sp,side,{width:1024,height:1400,getContext:()=>ctx});
+  return c.toDataURL('image/jpeg',0.9);
+}
+function openReader(side){
+  const n=6+curSpread*2;
+  $('#rTitle').textContent='Páginas '+n+' e '+(n+1);
+  $('#rPages').innerHTML='<img id="rL" alt="Página '+n+'" src="'+pageImage(curSpread,'L')+'"><img id="rR" alt="Página '+(n+1)+'" src="'+pageImage(curSpread,'R')+'">';
+  $('#reader').hidden=false;$('#reader').scrollTop=0;
+  if(side==='R')setTimeout(()=>{const r=$('#rR');if(r)r.scrollIntoView({block:'start'});},60);
+  $('#rClose').focus();
+}
+function closeReader(){$('#reader').hidden=true;$('#rPages').innerHTML='';}
+$('#readBtn').onclick=()=>openReader('L');
+$('#rClose').onclick=closeReader;
 
 /* ---------- carimbos ---------- */
 let stampTimer=null;
@@ -777,7 +809,7 @@ function renderCard(){
   if(s===0){
     h='<span class="eyebrow">Lição 1 · Citologia</span><h1>A célula <i>sai da página</i></h1>'+
       '<p>Todo ser vivo é feito de células. Esta é uma célula animal, aumentada umas 5 mil vezes.</p>'+
-      '<p class="muted">Gire o livro com o dedo. Para virar a página, use a seta › ou toque no canto dobrado.</p>'+
+      '<p class="muted">Gire com um dedo, mova com dois. Toque na página ou em Aa para ler. Para virar, use a seta › ou o canto dobrado.</p>'+
       '<div class="row"><button class="btn" id="go1">Explorar a célula</button><button class="btn ghost" id="demoBtn">Ver demonstração</button></div><button class="btn ghost" id="propCard" style="align-self:flex-start">Proposta para a escola</button>';
   }else if(s===1){
     const n=S.found.size;
@@ -869,7 +901,7 @@ function goStep(n){
 }
 $('#prevBtn').onclick=()=>goStep(S.step-1);
 $('#nextBtn').onclick=()=>goStep(S.step+1);
-addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(e.key==='ArrowRight'&&canNext())goStep(S.step+1);if(e.key==='ArrowLeft')goStep(S.step-1);if(e.key==='Escape'){closeDrawer();closeProp();select(null);}});
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(e.key==='ArrowRight'&&canNext())goStep(S.step+1);if(e.key==='ArrowLeft')goStep(S.step-1);if(e.key==='Escape'){closeDrawer();closeProp();closeReader();select(null);}});
 
 /* ---------- sumário ---------- */
 $('#lessons').innerHTML=LESSONS.map((l,i)=>'<li'+(i===0?' class="cur"':'')+'><span class="num">'+String(i+1).padStart(2,'0')+'</span><span class="nm">'+l+'</span><span class="st">'+(i===0?'Aberta':'Em breve')+'</span></li>').join('');
