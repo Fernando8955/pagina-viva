@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Biologia Viva</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/* Layout: cena 3D em tela cheia (um livro aberto numa mesa). Por cima, papéis soltos:
+   o cartão da lição no alto, a barra de passos embaixo. Visual único e fixo (mesa à luz do dia),
+   igual nos temas claro e escuro, por escolha. */
+:root{
+  --desk:#6b878c;
+  --paper:#f6f6f1;
+  --paper-2:#ebebe3;
+  --note:#f7efc4;
+  --ink:#1d2742;
+  --ink-2:#56607a;
+  --rule:#d3d6cc;
+  --bio:#1d7a60;
+  --stamp:#3a46c4;
+  --f-display:"Instrument Serif","Iowan Old Style",Georgia,serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+
+.hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;gap:10px;
+  padding-top:calc(12px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hud .grow{flex:1;min-height:0}
+.live{pointer-events:auto}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-radius:999px;padding:6px 12px 6px 10px;font:600 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 4px 14px rgba(20,30,40,.18)}
+.chip .seal{width:18px;height:18px;border-radius:50%;border:2px solid var(--bio);display:grid;place-items:center}
+.chip .seal::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--bio)}
+.chip b{font-weight:600;color:var(--stamp)}
+
+.card{width:min(390px,100%);max-height:min(56vh,540px);overflow:auto;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:0 12px 32px rgba(20,30,40,.26);padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px}
+.eyebrow{font:600 11px/1.2 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.card h1{font:400 34px/1 var(--f-display);margin:0;text-wrap:balance}
+.card h1 i{font-style:italic;color:var(--bio)}
+.card p{margin:0;line-height:1.5;color:var(--ink)}
+.card p.muted{color:var(--ink-2);font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.btn{appearance:none;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font:700 14px/1 var(--f-body);padding:11px 14px;border-radius:8px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--stamp);outline-offset:2px}
+
+.parts{display:flex;flex-wrap:wrap;gap:6px}
+.part{appearance:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rule);background:var(--paper-2);color:var(--ink);border-radius:999px;padding:6px 10px 6px 7px;font:600 13px/1 var(--f-body);cursor:pointer}
+.part .dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--ink)}
+.part.found{background:var(--paper);border-color:var(--ink)}
+.part.found::after{content:"✓";color:var(--bio);font-weight:700}
+.part.sel{box-shadow:0 0 0 2px var(--stamp)}
+.meter{display:flex;align-items:center;gap:10px;font:600 12px var(--f-mono);color:var(--ink-2)}
+.meter .track{flex:1;height:6px;border-radius:3px;background:var(--paper-2);overflow:hidden}
+.meter .fill{height:100%;background:var(--bio);width:0;transition:width .4s}
+
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{appearance:none;text-align:left;display:flex;gap:10px;align-items:center;border:1px solid var(--rule);background:var(--paper-2);border-radius:8px;padding:10px 12px;font:600 15px var(--f-body);color:var(--ink);cursor:pointer}
+.opt .ring{width:16px;height:16px;border-radius:50%;border:2px solid var(--ink-2);flex:none}
+.opt[aria-pressed="true"]{background:var(--paper);border-color:var(--ink)}
+.opt[aria-pressed="true"] .ring{border-color:var(--ink);background:radial-gradient(var(--ink) 0 4px,transparent 5px)}
+
+.eq{font:600 13px/1.6 var(--f-mono);background:var(--paper-2);border-radius:8px;padding:8px 10px;color:var(--ink-2)}
+.eq span{transition:color .3s,background .3s;border-radius:4px;padding:0 3px}
+.eq span.on{color:var(--ink);background:var(--note)}
+
+.flap{position:relative;perspective:900px;margin-top:2px}
+.flap-under{background:var(--note);border:1px dashed var(--ink-2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.flap-under strong{font:400 22px/1.1 var(--f-display)}
+.flap-cover{position:absolute;inset:0;appearance:none;border:1px solid var(--rule);border-radius:8px;cursor:pointer;transform-origin:top center;transition:transform .8s cubic-bezier(.3,.7,.2,1);backface-visibility:hidden;
+  background:repeating-linear-gradient(-45deg,var(--paper-2) 0 10px,var(--paper) 10px 20px);color:var(--ink);font:700 15px var(--f-body);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 14px rgba(20,30,40,.18)}
+.flap-cover small{display:block;font:400 12px var(--f-body);color:var(--ink-2)}
+.flap.open .flap-cover{transform:rotateX(-172deg);pointer-events:none}
+
+.stamps{display:flex;gap:12px;flex-wrap:wrap}
+.mini{width:96px;height:96px;border-radius:50%;border:3px double var(--rule);display:grid;place-items:center;text-align:center;font:600 10px/1.25 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);transform:rotate(-8deg)}
+.mini.got{border-color:var(--stamp);color:var(--stamp)}
+.mini big{display:block;font:400 26px/1 var(--f-display);text-transform:none;letter-spacing:0}
+ul.learn{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;line-height:1.45}
+details{border-top:1px solid var(--rule);padding-top:8px}
+summary{cursor:pointer;font:700 14px var(--f-body)}
+details p,details li{font-size:14px;color:var(--ink-2)}
+details ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+
+.info{align-self:center;width:min(520px,100%);background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:0 10px 26px rgba(20,30,40,.24);padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.info .sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);flex:none;margin-top:2px}
+.info .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.info h2{margin:0;font:400 24px/1.05 var(--f-display)}
+.info p{margin:0;line-height:1.45}
+.info p.ana{color:var(--ink-2);font-style:italic}
+.x{appearance:none;border:0;background:transparent;color:var(--ink-2);font:700 18px/1 var(--f-body);width:32px;height:32px;border-radius:50%;cursor:pointer;flex:none}
+
+.bar{align-self:center;width:min(660px,100%);display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:6px;box-shadow:0 10px 26px rgba(20,30,40,.28)}
+.ib{appearance:none;width:40px;height:40px;flex:none;border-radius:50%;border:1px solid var(--rule);background:var(--paper-2);color:var(--ink);font:700 17px/1 var(--f-body);cursor:pointer;display:grid;place-items:center}
+.ib:disabled{opacity:.35;cursor:not-allowed}
+.cap{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:0 6px}
+.cap .n{font:600 10px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.cap .t{font:700 14px/1.2 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots{display:flex;gap:5px;padding-right:4px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--rule)}
+.dots i.on{background:var(--ink);width:18px;border-radius:4px}
+.dots i.done{background:var(--ink-2)}
+
+.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));font:600 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--paper);opacity:.85;pointer-events:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+
+.pin{position:fixed;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--paper);font:700 13px/1 var(--f-body);padding:6px 9px;border-radius:6px;white-space:nowrap;transform:translate(-50%,calc(-100% - 12px));will-change:left,top}
+.pin::after{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:var(--ink)}
+
+.stamp{position:fixed;left:50%;top:44%;width:190px;height:190px;margin:-95px 0 0 -95px;border-radius:50%;border:5px double var(--stamp);color:var(--stamp);background:rgba(246,246,241,.9);display:grid;place-items:center;text-align:center;font:600 12px/1.3 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;pointer-events:none;transform:rotate(-12deg);animation:thump .55s cubic-bezier(.2,1.6,.4,1) both;box-shadow:0 10px 30px rgba(20,30,40,.25)}
+.stamp big{display:block;font:400 34px/1 var(--f-display);text-transform:none;letter-spacing:0;margin:4px 0}
+@keyframes thump{from{transform:rotate(-12deg) scale(2.2);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
+
+.scrim{position:fixed;inset:0;background:rgba(15,22,35,.45)}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(350px,88vw);background:var(--paper);box-shadow:8px 0 30px rgba(10,15,25,.35);display:flex;flex-direction:column;gap:12px;overflow:auto;
+  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:18px}
+.drawer h2{margin:0;font:400 30px/1 var(--f-display)}
+.drawer ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.drawer li{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--rule)}
+.drawer li .num{font:600 12px var(--f-mono);color:var(--ink-2)}
+.drawer li .nm{font:700 15px var(--f-body)}
+.drawer li .st{font:600 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.drawer li.cur .st{color:var(--bio)}
+.drawer li.cur .nm{color:var(--bio)}
+
+.nogl{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--paper);font:600 16px/1.5 var(--f-body)}
+
+.finger{position:fixed;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(246,246,241,.55);border:2px solid rgba(29,39,66,.6);box-shadow:0 8px 18px rgba(10,20,35,.35);pointer-events:none;z-index:60;will-change:transform;transition:width .14s,height .14s,margin .14s,background .14s}
+.finger.press{width:34px;height:34px;margin:-17px 0 0 -17px;background:rgba(246,246,241,.85)}
+.ripple{position:fixed;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:2px solid var(--paper);pointer-events:none;z-index:59;animation:rip .65s ease-out forwards}
+@keyframes rip{to{transform:scale(3.4);opacity:0}}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#d23c3c;margin-right:6px;vertical-align:1px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+.chip.btnchip{cursor:pointer;background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.prop{position:fixed;top:0;bottom:0;right:0;width:min(470px,94vw);background:var(--paper);box-shadow:-8px 0 30px rgba(10,15,25,.35);overflow:auto;display:flex;flex-direction:column;gap:16px;
+  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-left:20px}
+.prop h2{margin:0;font:400 34px/1.02 var(--f-display);text-wrap:balance}
+.prop h2 i{color:var(--bio)}
+.prop h3{margin:0;font:600 11px/1.2 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.prop p{margin:0;line-height:1.5}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fact{border:1px solid var(--rule);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fact b{font:400 30px/1 var(--f-display)}
+.fact span{font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.steps3{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:s}
+.steps3 li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;line-height:1.45}
+.steps3 li::before{counter-increment:s;content:counter(s);width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font:600 12px var(--f-mono)}
+.phase{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.phase div{border:1px solid var(--rule);border-radius:8px;padding:8px;font-size:12.5px;line-height:1.35;min-width:0}
+.phase div.hot{border:2px solid var(--bio);background:color-mix(in srgb,var(--bio) 10%,var(--paper))}
+.phase strong{display:block;font-size:13px}
+.phase small{color:var(--ink-2);font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em}
+.price{border:1.5px dashed var(--ink);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--note)}
+.price b{font:400 36px/1 var(--f-display)}
+.price p{font-size:14px}
+@media (max-width:640px){
+  .card{width:100%;max-height:34vh;padding:12px 14px 14px;gap:8px}
+  .card h1{font-size:28px}
+  .card p{font-size:14.5px}
+  .dots{display:none}
+  .lnum{display:none}
+  .topprop{display:none}
+  .facts{grid-template-columns:1fr 1fr 1fr}
+  .phase{grid-template-columns:1fr 1fr}
+  .hint{display:none}
+  .info{padding:10px 12px}
+  .info h2{font-size:21px}
+  .info p{font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+
+<canvas id="scene" aria-label="Livro 3D aberto com uma célula animal saindo da página"></canvas>
+
+<div class="hud">
+  <div class="top">
+    <span class="chip live"><span class="seal"></span>Biologia Viva<span class="lnum"> · Lição 1/10</span></span>
+    <span class="row live" style="gap:8px"><button class="chip btnchip topprop" id="propTop">Proposta para a escola</button><span class="chip" id="stampChip">Carimbos <b id="stampCount">0/2</b></span></span>
+  </div>
+  <section class="card live" id="card" aria-live="polite"></section>
+  <div class="grow"></div>
+  <section class="info live" id="info" hidden>
+    <span class="sw" id="infoSw"></span>
+    <div class="txt">
+      <h2 id="infoName"></h2>
+      <p id="infoFn"></p>
+      <p class="ana" id="infoAna"></p>
+    </div>
+    <button class="x" id="infoClose" aria-label="Fechar">×</button>
+  </section>
+  <nav class="bar live" aria-label="Passos da lição">
+    <button class="ib" id="menuBtn" aria-label="Sumário do livro">≡</button>
+    <button class="ib" id="prevBtn" aria-label="Passo anterior">‹</button>
+    <div class="cap"><span class="n" id="capN"></span><span class="t" id="capT"></span></div>
+    <div class="dots" id="dots"></div>
+    <button class="ib" id="nextBtn" aria-label="Próximo passo">›</button>
+  </nav>
+</div>
+<div class="hint" id="hint">Arraste para girar · pinça ou roda para aproximar</div>
+<div class="pin" id="pin" hidden></div>
+<div class="finger" id="finger" hidden></div>
+<div class="stamp" id="stamp" hidden></div>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Sumário">
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Sumário do livro</span><button class="x" id="drawerClose" aria-label="Fechar">×</button></div>
+  <h2>Biologia Viva</h2>
+  <p style="margin:0;color:var(--ink-2);line-height:1.45">Dez lições para prever, testar e comprovar. Ensino médio e Enem.</p>
+  <ol id="lessons"></ol>
+</aside>
+<aside class="prop" id="prop" hidden aria-label="Proposta de piloto">
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Proposta de piloto · Página Viva</span><button class="x" id="propClose" aria-label="Fechar">×</button></div>
+  <h2>O livro da sua escola, <i>saindo da página</i></h2>
+  <p>Transformamos as figuras mais difíceis do material de Biologia em cenas 3D que o aluno abre no celular, manuseia, prevê e testa. Como esta que está rodando atrás deste painel.</p>
+  <div class="facts">
+    <div class="fact"><b>8</b><span>cenas do material da escola</span></div>
+    <div class="fact"><b>2</b><span>turmas da 1ª série</span></div>
+    <div class="fact"><b>12</b><span>semanas, do início ao relatório</span></div>
+  </div>
+  <h3>Como funciona</h3>
+  <ol class="steps3">
+    <li>Um QR Code ao lado da figura do livro abre a cena no celular, sem instalar nada.</li>
+    <li>O aluno gira, toca nas partes, faz a previsão, testa e levanta a aba para conferir.</li>
+    <li>O professor acompanha num painel quem fez cada cena e onde a turma errou.</li>
+  </ol>
+  <h3>Cronograma</h3>
+  <div class="phase">
+    <div><small>SEMANA 1</small><strong>Início</strong>Material e escolha das cenas</div>
+    <div><small>SEMANAS 2–4</small><strong>Produção</strong>Revisão do professor</div>
+    <div class="hot"><small>SEMANAS 5–11</small><strong>Uso em aula</strong>1 cena por semana</div>
+    <div><small>SEMANA 12</small><strong>Avaliação</strong>Relatório e decisão</div>
+  </div>
+  <div class="price">
+    <h3>Investimento do piloto</h3>
+    <b>R$ 4.500</b>
+    <p>50% na assinatura e 50% quando as cenas forem liberadas. Se menos de 60% dos alunos concluírem 3 cenas, a segunda parcela não é cobrada.</p>
+    <p>Depois do piloto: R$ 49 por aluno por ano, por matéria.</p>
+  </div>
+  <h3>Próximo passo</h3>
+  <p>Uma conversa de 30 minutos com a coordenação e o professor de Biologia, com demonstração ao vivo. Responda a quem te enviou este link.</p>
+  <div class="row"><button class="btn" id="propTry">Experimentar a cena agora</button></div>
+</aside>
+<div class="nogl" id="nogl" hidden>Este aparelho não conseguiu abrir a cena 3D. Tente em outro navegador ou atualize o sistema.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(!window.THREE){ $('#nogl').hidden=false; return; }
+const V3=THREE.Vector3;
+const INK=0x1d2742;
+
+/* ---------- conteúdo ---------- */
+const ORG={
+  membrana:{nome:'Membrana plasmática',cor:0x8fd1bb,css:'#8fd1bb',fn:'Envolve a célula e controla o que entra e o que sai.',ana:'É a portaria, com segurança na entrada.'},
+  nucleo:{nome:'Núcleo',cor:0x7c6ad6,css:'#7c6ad6',fn:'Guarda o DNA: as instruções de tudo o que a célula faz.',ana:'É a diretoria da célula.'},
+  mito:{nome:'Mitocôndria',cor:0xf08a3c,css:'#f08a3c',fn:'Transforma glicose e oxigênio na energia que a célula usa, o ATP.',ana:'É a usina de energia.'},
+  re:{nome:'Retículo endoplasmático',cor:0x3fa3bf,css:'#3fa3bf',fn:'Rede de canais que produz e transporta proteínas e gorduras.',ana:'São as esteiras da fábrica.'},
+  ribo:{nome:'Ribossomos',cor:0x2b3557,css:'#2b3557',fn:'Montam as proteínas seguindo as instruções que vêm do núcleo.',ana:'São os operários da montagem.'},
+  golgi:{nome:'Complexo de Golgi',cor:0xe0608f,css:'#e0608f',fn:'Recebe as proteínas, embala e envia para onde precisam ir.',ana:'É o setor de embalagem e correio.'},
+  liso:{nome:'Lisossomos',cor:0x8cbf3f,css:'#8cbf3f',fn:'Bolsinhas com enzimas que digerem restos e peças velhas da célula.',ana:'São a equipe de limpeza e reciclagem.'}
+};
+const ORDER=['membrana','nucleo','mito','re','ribo','golgi','liso'];
+const LESSONS=['A célula','Célula animal e vegetal','Membrana e osmose','Fotossíntese','Respiração celular','DNA e proteínas','Divisão celular','Genética de Mendel','Coração e circulação','Cadeias alimentares'];
+const STEPS=[
+  {cap:'A célula sai da página',view:'book'},
+  {cap:'Explore: toque em cada parte',view:'cell'},
+  {cap:'Corte: veja por dentro',view:'cell'},
+  {cap:'Preveja',view:'cell'},
+  {cap:'Teste na célula',view:'cell'},
+  {cap:'Resumo e carimbos',view:'book'}
+];
+const S={step:0,found:new Set(),sel:null,cut:false,pred:null,testing:false,tested:false,flap:false,stamps:{explorador:false,cientista:false},risen:false};
+
+/* ---------- renderizador ---------- */
+const canvas=$('#scene');
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }catch(e){ $('#nogl').hidden=false; return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x6b878c);
+const camera=new THREE.PerspectiveCamera(36,1,0.1,120);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=.08; controls.enablePan=false;
+controls.minDistance=2.6; controls.maxDistance=24; controls.maxPolarAngle=1.38;
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x56706f,.78));
+const sun=new THREE.DirectionalLight(0xfff4e2,.72);
+sun.position.set(-6,12,7); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:40});
+sun.shadow.bias=-0.0006;
+scene.add(sun);
+
+/* mesa */
+const desk=new THREE.Mesh(new THREE.PlaneGeometry(90,90),new THREE.MeshLambertMaterial({color:0x6b878c}));
+desk.rotation.x=-Math.PI/2; desk.receiveShadow=true; scene.add(desk);
+const mat=new THREE.Mesh(new THREE.PlaneGeometry(15,10.4),new THREE.MeshLambertMaterial({color:0x86a196}));
+mat.rotation.x=-Math.PI/2; mat.position.set(0.3,0.004,0.3); mat.receiveShadow=true; scene.add(mat);
+
+/* livro */
+const PAGE_Y=0.46;
+const book=new THREE.Group(); scene.add(book);
+const cover=new THREE.Mesh(new THREE.BoxGeometry(10.5,0.2,7.1),new THREE.MeshLambertMaterial({color:0xd3a43a}));
+cover.position.y=0.1; cover.castShadow=true; cover.receiveShadow=true; book.add(cover);
+const blockMat=new THREE.MeshLambertMaterial({color:0xf0f0e8});
+[-2.53,2.53].forEach(x=>{const b=new THREE.Mesh(new THREE.BoxGeometry(5,0.26,6.7),blockMat);b.position.set(x,0.33,0);b.castShadow=true;b.receiveShadow=true;book.add(b);});
+const spine=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,6.7,10),new THREE.MeshLambertMaterial({color:0xc9c9bf}));
+spine.rotation.x=Math.PI/2; spine.position.set(0,0.4,0); book.add(spine);
+
+function pageCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+const leftC=pageCanvas(1024,1400), rightC=pageCanvas(1024,1400);
+const aniso=renderer.capabilities.getMaxAnisotropy();
+const leftT=new THREE.CanvasTexture(leftC), rightT=new THREE.CanvasTexture(rightC);
+[leftT,rightT].forEach(t=>{t.anisotropy=aniso;});
+function pagePlane(tex,x){const m=new THREE.Mesh(new THREE.PlaneGeometry(4.96,6.66),new THREE.MeshLambertMaterial({map:tex}));m.rotation.x=-Math.PI/2;m.position.set(x,PAGE_Y+0.002,0);m.receiveShadow=true;book.add(m);return m;}
+pagePlane(leftT,-2.53); pagePlane(rightT,2.53);
+
+function wrap(ctx,text,x,y,maxW,lh){
+  const words=text.split(' ');let line='';
+  for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);y+=lh;line=w;}else line=t;}
+  if(line){ctx.fillText(line,x,y);y+=lh;} return y;
+}
+function paperBase(ctx,W,H,gutterLeft){
+  ctx.fillStyle='#f4f4ee';ctx.fillRect(0,0,W,H);
+  const g=gutterLeft?ctx.createLinearGradient(0,0,90,0):ctx.createLinearGradient(W,0,W-90,0);
+  g.addColorStop(0,'rgba(40,50,60,.20)');g.addColorStop(1,'rgba(40,50,60,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+const DISPLAY='"Instrument Serif", Georgia, serif', BODY='"Atkinson Hyperlegible", "Segoe UI", sans-serif', MONO='"IBM Plex Mono", Menlo, monospace';
+function drawLeft(){
+  const c=leftC,ctx=c.getContext('2d'),W=c.width,H=c.height,X=96,MW=W-190;
+  paperBase(ctx,W,H,false);
+  ctx.fillStyle='#56607a';ctx.font='600 26px '+MONO;ctx.fillText('LIÇÃO 1  ·  CITOLOGIA',X,130);
+  ctx.fillStyle='#1d2742';ctx.font='132px '+DISPLAY;ctx.fillText('A célula',X,270);
+  ctx.font='32px '+BODY;let y=350;
+  y=wrap(ctx,'Todo ser vivo é feito de células. Algumas vivem sozinhas, como as bactérias. O corpo humano tem dezenas de trilhões delas.',X,y,MW,46);
+  y+=18;
+  y=wrap(ctx,'Dentro de cada célula há partes com tarefas diferentes, as organelas. Juntas, elas funcionam como uma pequena fábrica.',X,y,MW,46);
+  y+=30;
+  ctx.strokeStyle='#1d2742';ctx.lineWidth=3;ctx.setLineDash([10,8]);
+  ctx.strokeRect(X,y,MW,250);ctx.setLineDash([]);
+  ctx.fillStyle='#56607a';ctx.font='600 24px '+MONO;ctx.fillText('VOCABULÁRIO',X+30,y+50);
+  ctx.fillStyle='#1d2742';ctx.font='30px '+BODY;
+  ctx.fillText('organela  ·  parte da célula com uma função',X+30,y+105);
+  ctx.fillText('citoplasma  ·  o gel que preenche a célula',X+30,y+155);
+  ctx.fillText('DNA  ·  as instruções, guardadas no núcleo',X+30,y+205);
+  y+=310;
+  ctx.font='italic 52px '+DISPLAY;ctx.fillText('Antes de virar a página:',X,y);
+  ctx.font='32px '+BODY;y=wrap(ctx,'onde você acha que a célula produz a energia que usa?',X,y+52,MW,46);
+  ctx.strokeStyle='#c3c7bd';ctx.lineWidth=2;
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(X,y+30+i*52);ctx.lineTo(X+MW,y+30+i*52);ctx.stroke();}
+  ctx.fillStyle='#56607a';ctx.font='600 24px '+MONO;ctx.fillText('6',X,H-70);
+  leftT.needsUpdate=true;
+}
+function drawRight(){
+  const c=rightC,ctx=c.getContext('2d'),W=c.width,H=c.height;
+  paperBase(ctx,W,H,true);
+  ctx.strokeStyle='rgba(29,39,66,.07)';ctx.lineWidth=2;
+  for(let x=60;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,60);ctx.lineTo(x,H-160);ctx.stroke();}
+  for(let y=60;y<H-150;y+=48){ctx.beginPath();ctx.moveTo(60,y);ctx.lineTo(W-60,y);ctx.stroke();}
+  ctx.fillStyle='#1d2742';ctx.font='italic 40px '+DISPLAY;ctx.fillText('Fig. 1',110,H-100);
+  ctx.font='28px '+BODY;ctx.fillStyle='#56607a';
+  ctx.fillText('Célula animal, modelo fora de escala.',220,H-100);
+  ctx.fillText('Toque em cada parte para ver o que ela faz.',220,H-60);
+  ctx.font='600 24px '+MONO;ctx.fillText('7',W-110,H-70);
+  rightT.needsUpdate=true;
+}
+drawLeft();drawRight();
+if(document.fonts&&document.fonts.load){
+  Promise.all([document.fonts.load('60px "Instrument Serif"'),document.fonts.load('italic 60px "Instrument Serif"'),document.fonts.load('30px "Atkinson Hyperlegible"'),document.fonts.load('600 24px "IBM Plex Mono"')])
+    .then(()=>{drawLeft();drawRight();}).catch(()=>{});
+}
+
+/* ---------- célula ---------- */
+const gm=new THREE.DataTexture(new Uint8Array([105,180,255]),3,1,THREE.LuminanceFormat);
+gm.minFilter=gm.magFilter=THREE.NearestFilter; gm.generateMipmaps=false; gm.needsUpdate=true;
+const toon=(c,extra)=>new THREE.MeshToonMaterial(Object.assign({color:c,gradientMap:gm,transparent:true},extra||{}));
+
+const parts={};
+ORDER.forEach(id=>{parts[id]={mat:toon(ORG[id].cor),ol:new THREE.MeshBasicMaterial({color:INK,side:THREE.BackSide,transparent:true}),extra:[],base:new THREE.Color(ORG[id].cor),anchor:null};});
+parts.nucleo.mat.side=THREE.DoubleSide;
+const pick=[];
+function mk(id,geo,olGeo,olScale,material){
+  const m=new THREE.Mesh(geo,material||parts[id].mat); m.castShadow=true; m.userData.part=id; pick.push(m);
+  if(olGeo!==false){const o=new THREE.Mesh(olGeo||geo,parts[id].ol); if(olScale)o.scale.setScalar(olScale); o.raycast=function(){}; m.add(o);}
+  return m;
+}
+
+const CELL_POS=new V3(2.53,PAGE_Y,0.15);
+const H=1.72, R=1.55, SQ=0.8;
+const cell=new THREE.Group(); cell.position.copy(CELL_POS); scene.add(cell);
+const body=new THREE.Group(); cell.add(body);
+const inner=new THREE.Group(); inner.position.y=H; body.add(inner);
+
+/* corte: a fatia removida fica de frente para a câmera */
+const CUT_A=0.45, CUT_L=1.9;
+const cutSphere=(r,w,h)=>new THREE.SphereGeometry(r,w||40,h||28,CUT_A+CUT_L,Math.PI*2-CUT_L);
+const inCut=(x,z)=>{let p=Math.atan2(z,-x);if(p<0)p+=Math.PI*2;return p>CUT_A&&p<CUT_A+CUT_L;};
+
+/* membrana + contorno de tinta (fresnel) */
+const memMat=toon(ORG.membrana.cor,{opacity:.45,side:THREE.DoubleSide,depthWrite:false});
+parts.membrana.mat=memMat;
+const rimMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,
+  uniforms:{c:{value:new THREE.Color(INK)},o:{value:1}},
+  vertexShader:'varying vec3 vN;varying vec3 vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'uniform vec3 c;uniform float o;varying vec3 vN;varying vec3 vV;void main(){float r=1.-abs(dot(normalize(vN),normalize(vV)));float a=smoothstep(.70,.92,r);gl_FragColor=vec4(c,a*o);}'});
+const shell=new THREE.Group(); shell.scale.set(1,SQ,1); inner.add(shell);
+const memFull=mk('membrana',new THREE.SphereGeometry(R,56,36),false); memFull.castShadow=false; memFull.renderOrder=10;
+const memCut=mk('membrana',cutSphere(R,56,36),false); memCut.castShadow=false; memCut.renderOrder=10;
+const memCut2=new THREE.Mesh(cutSphere(R*0.965,56,36),memMat); memCut2.renderOrder=10; memCut2.raycast=function(){};
+const rimFull=new THREE.Mesh(memFull.geometry,rimMat); rimFull.renderOrder=11; rimFull.raycast=function(){};
+const rimCut=new THREE.Mesh(memCut.geometry,rimMat); rimCut.renderOrder=11; rimCut.raycast=function(){};
+shell.add(memFull,memCut,memCut2,rimFull,rimCut);
+/* bordas do corte em tinta */
+const cutEdges=new THREE.Group(); shell.add(cutEdges);
+[CUT_A,CUT_A+CUT_L].forEach(phi=>{
+  [R,R*0.965].forEach(r=>{
+    const pts=[];for(let i=0;i<=40;i++){const th=i/40*Math.PI;pts.push(new V3(-r*Math.cos(phi)*Math.sin(th),r*Math.cos(th),r*Math.sin(phi)*Math.sin(th)));}
+    const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),60,0.012,5,false),new THREE.MeshBasicMaterial({color:INK}));
+    tube.raycast=function(){};cutEdges.add(tube);
+  });
+});
+const memAnchor=new THREE.Object3D(); memAnchor.position.set(-0.55,R*SQ*0.93,0.35); inner.add(memAnchor); parts.membrana.anchor=memAnchor;
+
+/* núcleo */
+const NR=0.5;
+const nucFull=mk('nucleo',new THREE.SphereGeometry(NR,36,26),null,1.06);
+const nucCut=mk('nucleo',cutSphere(NR,36,26),null,1.06);
+const nucleolusMat=toon(0x4a3a9e); parts.nucleo.extra.push(nucleolusMat);
+const nucleolus=mk('nucleo',new THREE.SphereGeometry(0.17,24,16),false,null,nucleolusMat); nucleolus.position.set(0.08,0.05,0.05);
+const chromMat=toon(0x5d4cc0); parts.nucleo.extra.push(chromMat);
+const nucleus=new THREE.Group(); nucleus.position.set(0,0.04,0); nucleus.add(nucFull,nucCut,nucleolus);
+for(let k=0;k<4;k++){
+  const pts=[];for(let i=0;i<7;i++){const a=Math.random()*Math.PI*2,b=Math.acos(2*Math.random()-1),r=0.18+Math.random()*0.22;pts.push(new V3(r*Math.sin(b)*Math.cos(a),r*Math.cos(b),r*Math.sin(b)*Math.sin(a)));}
+  nucleus.add(mk('nucleo',new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),50,0.016,5,false),false,null,chromMat));
+}
+const poreMat=new THREE.MeshBasicMaterial({color:0x3b2f86,transparent:true}); parts.nucleo.extra.push(poreMat);
+for(let i=0;i<26;i++){
+  const a=Math.random()*Math.PI*2,b=Math.acos(2*Math.random()-1),p=new V3(NR*Math.sin(b)*Math.cos(a),NR*Math.cos(b),NR*Math.sin(b)*Math.sin(a));
+  if(inCut(p.x,p.z))continue;
+  const d=new THREE.Mesh(new THREE.SphereGeometry(0.03,8,6),poreMat);d.position.copy(p);d.raycast=function(){};nucleus.add(d);
+}
+inner.add(nucleus); parts.nucleo.anchor=nucleus;
+
+/* retículo endoplasmático (arcos em volta do núcleo) + ribossomos presos nele */
+const reGroup=new THREE.Group(); reGroup.position.copy(nucleus.position); reGroup.rotation.set(-0.55,0.35,0.95); inner.add(reGroup);
+const riboGeo=new THREE.SphereGeometry(0.032,8,6);
+const reRiboPts=[];
+for(let i=0;i<5;i++){
+  const r=0.66+i*0.095, arc=Math.PI*1.25;
+  const t=mk('re',new THREE.TorusGeometry(r,0.026,8,56,arc),new THREE.TorusGeometry(r,0.043,8,56,arc));
+  t.rotation.z=i*0.07; reGroup.add(t);
+  for(let j=0;j<12;j++){const a=Math.random()*arc+i*0.07,rr=r+0.045*(Math.random()<.5?1:-1);reRiboPts.push(new V3(rr*Math.cos(a),rr*Math.sin(a),(Math.random()-.5)*0.05));}
+}
+parts.re.anchor=reGroup.children[2];
+function riboInstances(points,parent){
+  const im=new THREE.InstancedMesh(riboGeo,parts.ribo.mat,points.length);const d=new THREE.Object3D();
+  points.forEach((p,i)=>{d.position.copy(p);d.updateMatrix();im.setMatrixAt(i,d.matrix);});
+  im.userData.part='ribo'; pick.push(im); parent.add(im); return im;
+}
+riboInstances(reRiboPts,reGroup);
+const freeRibo=[];
+while(freeRibo.length<120){
+  const p=new V3((Math.random()*2-1)*1.3,(Math.random()*2-1)*1.05,(Math.random()*2-1)*1.3);
+  const e=(p.x*p.x)/(1.3*1.3)+(p.y*p.y)/(1.05*1.05)+(p.z*p.z)/(1.3*1.3);
+  if(e<1&&p.length()>0.72)freeRibo.push(p);
+}
+riboInstances(freeRibo,inner);
+const riboAnchor=new THREE.Object3D(); riboAnchor.position.copy(freeRibo[0]); inner.add(riboAnchor); parts.ribo.anchor=riboAnchor;
+
+/* mitocôndrias */
+const cristaMat=new THREE.MeshBasicMaterial({color:0xc8692a,transparent:true}); parts.mito.extra.push(cristaMat);
+const mitos=[];
+function mito(pos,rot,len){
+  const g=new THREE.Group(),r=0.15;
+  g.add(mk('mito',new THREE.CylinderGeometry(r,r,len,18,1,true),new THREE.CylinderGeometry(r+0.028,r+0.028,len,18,1,true)));
+  [len/2,-len/2].forEach(y=>{const s=mk('mito',new THREE.SphereGeometry(r,18,12),null,1.19);s.position.y=y;g.add(s);});
+  for(let i=-1;i<=1;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(r*1.01,0.011,6,22),cristaMat);ring.rotation.x=Math.PI/2;ring.position.y=i*len*0.27;ring.raycast=function(){};g.add(ring);}
+  g.position.copy(pos); g.rotation.set(rot[0],rot[1],rot[2]); inner.add(g); mitos.push(g); return g;
+}
+mito(new V3(-0.9,-0.32,0.52),[0.3,0,1.1],0.5);
+mito(new V3(0.74,0.46,-0.55),[1.0,0.4,0.2],0.55);
+mito(new V3(-0.36,0.6,0.7),[0.2,0.8,1.6],0.45);
+mito(new V3(0.18,-0.56,-0.86),[1.4,0,0.3],0.5);
+parts.mito.anchor=mitos[0];
+
+/* complexo de Golgi */
+const golgi=new THREE.Group(); golgi.position.set(0.86,-0.4,0.5); golgi.rotation.set(0.5,-0.7,0.25); inner.add(golgi);
+for(let i=0;i<4;i++){
+  const r=0.3-i*0.035,arc=Math.PI*1.15;
+  const t=mk('golgi',new THREE.TorusGeometry(r,0.046,8,30,arc),new THREE.TorusGeometry(r,0.068,8,30,arc));
+  t.position.z=i*0.105; t.rotation.z=-0.35; golgi.add(t);
+}
+[[0.36,0.18,0.1],[0.4,-0.08,0.25],[-0.18,0.36,0.18],[0.3,0.32,-0.05],[-0.28,0.28,0.4]].forEach(p=>{const v=mk('golgi',new THREE.SphereGeometry(0.045,12,8),null,1.3);v.position.set(p[0],p[1],p[2]);golgi.add(v);});
+parts.golgi.anchor=golgi;
+
+/* lisossomos */
+const lysoDot=new THREE.MeshBasicMaterial({color:0x4d7a1c,transparent:true}); parts.liso.extra.push(lysoDot);
+const lysos=[[0.25,-0.8,0.55],[-0.95,0.38,-0.45],[1.08,0.22,0.12],[-0.58,-0.6,-0.72]].map(p=>{
+  const s=mk('liso',new THREE.SphereGeometry(0.11,18,12),null,1.16); s.position.set(p[0],p[1],p[2]);
+  for(let i=0;i<5;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(0.018,6,4),lysoDot);const a=Math.random()*6.28,b=Math.random()*3.14;d.position.set(0.1*Math.sin(b)*Math.cos(a),0.1*Math.cos(b),0.1*Math.sin(b)*Math.sin(a));d.raycast=function(){};s.add(d);}
+  inner.add(s); return s;
+});
+parts.liso.anchor=lysos[0];
+
+/* sombra suave sob a célula */
+const blobC=pageCanvas(256,256),bctx=blobC.getContext('2d');
+const bg=bctx.createRadialGradient(128,128,10,128,128,128);bg.addColorStop(0,'rgba(20,30,45,.55)');bg.addColorStop(1,'rgba(20,30,45,0)');
+bctx.fillStyle=bg;bctx.fillRect(0,0,256,256);
+const blob=new THREE.Mesh(new THREE.PlaneGeometry(3.6,3.6),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(blobC),transparent:true,depthWrite:false,opacity:0}));
+blob.rotation.x=-Math.PI/2; blob.position.y=0.006; cell.add(blob);
+
+/* ---------- aparência: corte, foco, brilho ---------- */
+function applyLook(){
+  memFull.visible=rimFull.visible=!S.cut;
+  memCut.visible=memCut2.visible=rimCut.visible=cutEdges.visible=S.cut;
+  nucFull.visible=!S.cut; nucCut.visible=S.cut;
+  const focus=S.sel||(S.testing?'mito':null);
+  ORDER.forEach(k=>{
+    const p=parts[k],on=!focus||k===focus;
+    const f=on?1:(S.testing?0.4:0.22);
+    if(k==='membrana'){ memMat.opacity=(S.cut?0.3:0.45)*(on?1:0.55); rimMat.uniforms.o.value=on?0.95:0.45; }
+    else { p.mat.opacity=f; p.ol.opacity=on?1:0.12; p.extra.forEach(m=>m.opacity=f); }
+    p.mat.emissive.setRGB(0,0,0);
+  });
+}
+applyLook();
+
+/* ---------- partículas do teste ---------- */
+function glowTex(rgb){const c=pageCanvas(64,64),x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba('+rgb+',1)');g.addColorStop(1,'rgba('+rgb+',0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+const sparkTex=glowTex('255,196,61');
+const tasks=[];
+let clock=0;
+function task(delay,dur,update,done){tasks.push({t0:clock+delay,dur,update,done,started:false});}
+function bez(a,c,b,t){const u=1-t;return new V3(u*u*a.x+2*u*t*c.x+t*t*b.x,u*u*a.y+2*u*t*c.y+t*t*b.y,u*u*a.z+2*u*t*c.z+t*t*b.z);}
+function fly(obj,from,to,delay,dur,lift,onEnd,fade){
+  const ctrl=from.clone().lerp(to,0.5).add(new V3(0,lift,0));
+  obj.visible=false; inner.add(obj);
+  task(delay,dur,t=>{obj.visible=true;const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;obj.position.copy(bez(from,ctrl,to,e));if(fade)fade(obj,t);},()=>{inner.remove(obj);if(onEnd)onEnd();});
+}
+const hexGeo=new THREE.CylinderGeometry(0.085,0.085,0.035,6);
+const hexMat=new THREE.MeshBasicMaterial({color:0xffffff});
+const hexOl=new THREE.MeshBasicMaterial({color:INK,side:THREE.BackSide});
+const o2Mat=new THREE.MeshBasicMaterial({color:0x4f86e0});
+const co2Mat=new THREE.MeshBasicMaterial({color:0x8b93a3});
+function glucose(){const m=new THREE.Mesh(hexGeo,hexMat);const o=new THREE.Mesh(hexGeo,hexOl);o.scale.set(1.3,1.6,1.3);m.add(o);m.rotation.x=1.1;return m;}
+function molecule(matl,n){const g=new THREE.Group();for(let i=0;i<n;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),matl);s.position.x=(i-(n-1)/2)*0.075;g.add(s);}return g;}
+function spark(){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTex,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));s.scale.setScalar(0.26);return s;}
+const energyTargets=()=>{
+  const list=[nucleus.position.clone().add(new V3(0.3,0.35,0.25)),golgi.position.clone(),new V3(0.6,0.9*SQ,0.6),freeRibo[3].clone(),freeRibo[9].clone(),freeRibo[20].clone(),lysos[0].position.clone(),new V3(-1.2*0.9,0,0.3)];
+  return list[Math.floor(Math.random()*list.length)];
+};
+let mitoPulse=0;
+function runTest(){
+  S.testing=true; S.tested=false; S.sel=null; S.cut=true; hideInfo(); applyLook(); setEq(0);
+  const dest=[mitos[0],mitos[2]];
+  const tStep=REDUCE?0.5:1;
+  for(let i=0;i<6;i++){
+    const m=dest[i%2].position.clone();
+    const from=new V3(-2.5+Math.random()*0.4,0.2+Math.random()*0.8,1.3+Math.random()*0.6);
+    fly(glucose(),from,m,i*0.32*tStep,1.7*tStep,0.6,()=>{
+      mitoPulse=1; setEq(2);
+      for(let k=0;k<7;k++){const sp=spark();fly(sp,m.clone(),energyTargets(),k*0.05,1.3*tStep,0.4,null,(o,t)=>{o.material.opacity=1-t*t;o.scale.setScalar(0.22+t*0.18);});}
+    });
+    fly(molecule(o2Mat,2),from.clone().add(new V3(0.2,-0.3,0.1)),m.clone().add(new V3(0.05,0,0)),0.15+i*0.32*tStep,1.7*tStep,0.4,null);
+  }
+  task(0.2,0.1,()=>setEq(1));
+  for(let i=0;i<5;i++){
+    const m=dest[i%2].position.clone();
+    fly(molecule(co2Mat,3),m,new V3(-2.6+Math.random()*0.5,1.0+Math.random()*0.6,1.2+Math.random()*0.6),(3.4+i*0.25)*tStep,1.6*tStep,0.5,null);
+  }
+  task(3.6*tStep,0.1,()=>setEq(3));
+  task(6.4*tStep,0.1,()=>{},()=>{S.testing=false;S.tested=true;applyLook();renderCard();});
+}
+
+/* ---------- câmera ---------- */
+const cellCenter=()=>CELL_POS.clone().add(new V3(0,H,0));
+function views(){
+  const a=camera.aspect,k=a<0.62?1.85:a<0.9?1.4:1;
+  const narrow=innerWidth<=640;
+  const bookT=narrow?new V3(0.25,1.4,0.9):new V3(-0.55,0.5,0.6);
+  const cellT=cellCenter().add(narrow?new V3(0,0.8,0):new V3(-0.95,0.15,0));
+  return{
+    book:{pos:bookT.clone().add(new V3(0.15,9.3*k,8.0*k)),tgt:bookT},
+    cell:{pos:cellT.clone().add(new V3(-1.6,2.5,5.6).multiplyScalar(k)),tgt:cellT}
+  };
+}
+let camTween=null;
+function goView(name,instant){
+  const v=views()[name];
+  if(instant||REDUCE){camera.position.copy(v.pos);controls.target.copy(v.tgt);controls.update();return;}
+  camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:v.pos,t1:v.tgt,s:clock,d:1.5};
+}
+function resize(){
+  const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+addEventListener('resize',()=>{resize();goView(STEPS[S.step].view,true);});
+resize(); goView('book',true);
+
+/* ---------- toque nas partes ---------- */
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
+let down=null;
+function shown(o){while(o){if(!o.visible)return false;o=o.parent;}return true;}
+canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};});
+canvas.addEventListener('pointerup',e=>{
+  if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;
+  if(moved>7||!S.risen||S.testing)return;
+  const r=canvas.getBoundingClientRect();
+  ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(pick,false).filter(h=>shown(h.object));
+  if(!hits.length){select(null);return;}
+  const h=hits.find(h=>h.object.userData.part!=='membrana')||hits[0];
+  select(h.object.userData.part);
+});
+function select(id){
+  S.sel=id; applyLook(); renderParts();
+  if(!id){hideInfo();return;}
+  const firstTime=!S.found.has(id); S.found.add(id);
+  $('#infoSw').style.background=ORG[id].css;
+  $('#infoName').textContent=ORG[id].nome;
+  $('#infoFn').textContent=ORG[id].fn;
+  $('#infoAna').textContent=ORG[id].ana;
+  $('#info').hidden=false;
+  if(firstTime&&S.found.size===ORDER.length&&!S.stamps.explorador){S.stamps.explorador=true;stamp('Explorador','7 de 7 partes');}
+  if(S.step===1)renderCard();
+}
+function hideInfo(){$('#info').hidden=true;$('#pin').hidden=true;}
+$('#infoClose').onclick=()=>select(null);
+
+/* ---------- carimbos ---------- */
+let stampTimer=null;
+function stamp(title,sub){
+  const el=$('#stamp');el.innerHTML='<div>Carimbo<big>'+title+'</big>'+sub+'</div>';
+  el.hidden=false;el.style.animation='none';void el.offsetWidth;el.style.animation='';
+  clearTimeout(stampTimer);stampTimer=setTimeout(()=>{el.hidden=true;},2200);
+  updateStampChip();
+}
+function updateStampChip(){$('#stampCount').textContent=(+S.stamps.explorador + +S.stamps.cientista)+'/2';}
+
+/* ---------- cartão de cada passo ---------- */
+const card=$('#card');
+function partsHTML(){
+  return '<div class="parts">'+ORDER.map(k=>'<button class="part'+(S.found.has(k)?' found':'')+(S.sel===k?' sel':'')+'" data-part="'+k+'"><span class="dot" style="background:'+ORG[k].css+'"></span>'+ORG[k].nome+'</button>').join('')+'</div>';
+}
+function renderParts(){const wrapEl=card.querySelector('.parts');if(wrapEl){wrapEl.outerHTML=partsHTML();bindParts();}}
+function bindParts(){card.querySelectorAll('[data-part]').forEach(b=>b.onclick=()=>{if(!S.risen)return;select(S.sel===b.dataset.part?null:b.dataset.part);});}
+let eqStage=0;
+function setEq(n){eqStage=n;const el=card.querySelector('.eq');if(!el)return;el.querySelectorAll('span').forEach(s=>s.classList.toggle('on',+s.dataset.s<=n&&+s.dataset.s>0));}
+
+function renderCard(){
+  const s=S.step;let h='';
+  if(s===0){
+    h='<span class="eyebrow">Lição 1 · Citologia</span><h1>A célula <i>sai da página</i></h1>'+
+      '<p>Todo ser vivo é feito de células. Esta é uma célula animal, aumentada umas 5 mil vezes.</p>'+
+      '<p class="muted">Gire o livro com o dedo. Quando estiver pronto, avance para explorar a célula por dentro.</p>'+
+      '<div class="row"><button class="btn" id="go1">Explorar a célula</button><button class="btn ghost" id="demoBtn">Ver demonstração</button></div><button class="btn ghost" id="propCard" style="align-self:flex-start">Proposta para a escola</button>';
+  }else if(s===1){
+    const n=S.found.size;
+    h='<span class="eyebrow">Passo 2 · Explore</span><h1>Toque em cada parte</h1>'+
+      '<p>Cada organela tem uma tarefa. Toque nela na célula ou aqui embaixo.</p>'+partsHTML()+
+      '<div class="meter"><span>'+n+'/7</span><span class="track"><span class="fill" style="width:'+(n/7*100)+'%"></span></span><span>'+(n===7?'Carimbo ganho':'descobertas')+'</span></div>';
+  }else if(s===2){
+    h='<span class="eyebrow">Passo 3 · Corte</span><h1>Veja por <i>dentro</i></h1>'+
+      '<p>A membrana é fina e tem duas camadas. Por dentro, o citoplasma é um gel cheio de organelas. No núcleo cortado aparecem o DNA enrolado e o nucléolo.</p>'+
+      '<div class="row"><button class="btn" id="cutBtn">'+(S.cut?'Fechar a célula':'Cortar a célula')+'</button></div>';
+  }else if(s===3){
+    h='<span class="eyebrow">Passo 4 · Preveja</span><h1>Onde nasce a <i>energia</i>?</h1>'+
+      '<p>A célula recebe açúcar (glicose) e oxigênio. Em qual organela eles viram a energia que a célula usa?</p>'+
+      '<div class="opts">'+[['nucleo','Núcleo'],['mito','Mitocôndria'],['ribo','Ribossomos']].map(o=>'<button class="opt" data-pred="'+o[0]+'" aria-pressed="'+(S.pred===o[0])+'"><span class="ring"></span>'+o[1]+'</button>').join('')+'</div>'+
+      '<div class="row"><button class="btn" id="testBtn"'+(S.pred?'':' disabled')+'>Testar na célula</button><span class="muted" style="font-size:13px;color:var(--ink-2)">Escolha antes de testar.</span></div>';
+  }else if(s===4){
+    const right=S.pred==='mito';
+    h='<span class="eyebrow">Passo 5 · Teste</span><h1>'+(S.tested?'Agora, a resposta':'Observe o caminho')+'</h1>'+
+      '<div class="eq"><span data-s="1">glicose + oxigênio</span> → <span data-s="2">energia (ATP)</span> + <span data-s="3">gás carbônico + água</span></div>'+
+      (S.tested?
+        '<p class="muted">Sua previsão: <strong style="color:var(--ink)">'+({nucleo:'Núcleo',mito:'Mitocôndria',ribo:'Ribossomos'}[S.pred]||'nenhuma')+'</strong>. Levante a aba para comprovar.</p>'+
+        '<div class="flap'+(S.flap?' open':'')+'" id="flap"><div class="flap-under"><strong>'+(right?'Você acertou: é a mitocôndria.':'É a mitocôndria.')+'</strong>'+
+        '<p>Ela usa a glicose e o oxigênio para produzir ATP, a "moeda" de energia da célula. Sobram gás carbônico e água, que saem da célula.</p>'+
+        '<p class="muted">A energia não surge do nada: ela estava guardada na glicose e foi transformada.</p></div>'+
+        '<button class="flap-cover" id="flapBtn"'+(S.flap?' tabindex="-1" aria-hidden="true"':'')+'><span>Levante a aba<small>para ver a resposta</small></span><span aria-hidden="true">↥</span></button></div>'+
+        (S.flap?'<div class="row"><button class="btn" id="goSum">Ver resumo</button><button class="btn ghost" id="again">Repetir o teste</button></div>':'')
+      :'<p class="muted">Acompanhe a glicose (hexágonos) e o oxigênio (azul) entrando. As faíscas amarelas são a energia saindo para o resto da célula.</p>');
+  }else{
+    h='<span class="eyebrow">Fim da lição 1</span><h1>Seus <i>carimbos</i></h1>'+
+      '<div class="stamps"><div class="mini'+(S.stamps.explorador?' got':'')+'"><div><big>Explorador</big>7 partes</div></div><div class="mini'+(S.stamps.cientista?' got':'')+'"><div><big>Cientista</big>previu e testou</div></div></div>'+
+      '<ul class="learn"><li>A célula é a menor unidade da vida.</li><li>Cada organela tem uma tarefa, como setores de uma fábrica.</li><li>A mitocôndria transforma glicose e oxigênio em energia (ATP).</li></ul>'+
+      '<div class="row"><button class="btn" id="nextL">Próxima lição</button><button class="btn ghost" id="restart">Recomeçar</button></div>'+
+      '<details><summary>Notas para o professor</summary><ul>'+
+      '<li>Tempo sugerido: 15 a 20 minutos, em dupla.</li>'+
+      '<li>Peça a previsão por escrito antes do teste. O registro mostra a mudança de ideia.</li>'+
+      '<li>Erro comum: dizer que a mitocôndria "cria" energia. Ela transforma a energia guardada na glicose.</li>'+
+      '<li>Para discutir: por que células musculares têm muitas mitocôndrias?</li></ul></details>';
+  }
+  card.innerHTML=h; bind();
+}
+function resetLesson(){S.found.clear();S.pred=null;S.flap=false;S.tested=false;S.testing=false;S.cut=false;S.sel=null;S.stamps={explorador:false,cientista:false};updateStampChip();hideInfo();applyLook();}
+function bind(){
+  const q=id=>card.querySelector('#'+id);
+  if(q('go1'))q('go1').onclick=()=>goStep(1);
+  if(q('demoBtn'))q('demoBtn').onclick=()=>setTimeout(runDemo,0);
+  if(q('propCard'))q('propCard').onclick=openProp;
+  bindParts();
+  if(q('cutBtn'))q('cutBtn').onclick=()=>{S.cut=!S.cut;applyLook();renderCard();};
+  card.querySelectorAll('[data-pred]').forEach(b=>b.onclick=()=>{S.pred=b.dataset.pred;renderCard();updateBar();});
+  if(q('testBtn'))q('testBtn').onclick=()=>goStep(4);
+  if(q('flapBtn'))q('flapBtn').onclick=()=>{
+    S.flap=true;q('flap').classList.add('open');
+    if(!S.stamps.cientista){S.stamps.cientista=true;setTimeout(()=>stamp('Cientista','previu e testou'),450);}
+    setTimeout(renderCard,820);
+  };
+  if(q('goSum'))q('goSum').onclick=()=>goStep(5);
+  if(q('again'))q('again').onclick=()=>{S.flap=false;S.tested=false;renderCard();runTest();};
+  if(q('nextL'))q('nextL').onclick=openDrawer;
+  if(q('restart'))q('restart').onclick=()=>{resetLesson();goStep(0);rise();};
+  setEq(eqStage);
+}
+
+/* ---------- barra de passos ---------- */
+const dots=$('#dots');dots.innerHTML=STEPS.map(()=>'<i></i>').join('');
+function canNext(){ if(S.step===3)return !!S.pred; if(S.step===4)return S.tested; return S.step<STEPS.length-1; }
+function updateBar(){
+  $('#capN').innerHTML=demo?'<span class="live-dot"></span>Demonstração<span class=\"lnum\"> · toque para usar</span>':'Passo '+(S.step+1)+' de '+STEPS.length;
+  $('#capT').textContent=STEPS[S.step].cap;
+  $('#prevBtn').disabled=S.step===0||S.testing;
+  $('#nextBtn').disabled=!canNext()||S.testing;
+  [...dots.children].forEach((d,i)=>{d.className=i===S.step?'on':i<S.step?'done':'';});
+}
+function goStep(n){
+  if(n<0||n>=STEPS.length||S.testing)return;
+  if(n===4&&!S.pred)n=3;
+  S.step=n;
+  if(n===2&&!S.cut){S.cut=true;}
+  if(n<2&&S.cut&&!S.tested){S.cut=false;}
+  if(n!==1&&n!==2&&S.sel){S.sel=null;hideInfo();}
+  applyLook();
+  goView(STEPS[n].view);
+  eqStage=0; renderCard(); updateBar();
+  if(n===4&&!S.tested)setTimeout(runTest,REDUCE?0:900);
+  $('#hint').hidden=n!==0&&n!==1;
+}
+$('#prevBtn').onclick=()=>goStep(S.step-1);
+$('#nextBtn').onclick=()=>goStep(S.step+1);
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(e.key==='ArrowRight'&&canNext())goStep(S.step+1);if(e.key==='ArrowLeft')goStep(S.step-1);if(e.key==='Escape'){closeDrawer();closeProp();select(null);}});
+
+/* ---------- sumário ---------- */
+$('#lessons').innerHTML=LESSONS.map((l,i)=>'<li'+(i===0?' class="cur"':'')+'><span class="num">'+String(i+1).padStart(2,'0')+'</span><span class="nm">'+l+'</span><span class="st">'+(i===0?'Aberta':'Em breve')+'</span></li>').join('');
+function openDrawer(){$('#drawer').hidden=false;$('#scrim').hidden=false;$('#drawerClose').focus();}
+function closeDrawer(){$('#drawer').hidden=true;$('#scrim').hidden=true;}
+function openProp(){closeDrawer();$('#prop').hidden=false;$('#scrim').hidden=false;$('#propClose').focus();}
+function closeProp(){$('#prop').hidden=true;if($('#drawer').hidden)$('#scrim').hidden=true;}
+$('#propTop').onclick=openProp;$('#propClose').onclick=closeProp;
+$('#propTry').onclick=()=>{closeProp();if(S.step===0)goStep(1);};
+$('#scrim').addEventListener('click',closeProp);
+$('#menuBtn').onclick=openDrawer;$('#drawerClose').onclick=closeDrawer;$('#scrim').onclick=closeDrawer;
+
+/* ---------- a célula sobe da página ---------- */
+function setRise(t){
+  const e=t<1?1-Math.pow(1-t,3)*(1-2.2*t*(1-t)):1;
+  body.scale.set(1,Math.max(0.025,e),1);
+  body.position.y=0;
+  inner.position.y=H*Math.min(1,0.08+e*0.92);
+  body.rotation.y=(1-Math.min(1,t))*-0.9;
+  blob.material.opacity=0.45*Math.min(1,t);
+  blob.scale.setScalar(0.6+0.4*Math.min(1,t));
+}
+function rise(){
+  S.risen=false; setRise(0);
+  task(REDUCE?0:0.5,REDUCE?0.01:1.9,t=>setRise(t),()=>{setRise(1);S.risen=true;});
+}
+setRise(0);
+
+/* ---------- loop ---------- */
+const pin=$('#pin'),tmp=new V3();
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;clock+=dt;
+  for(let i=tasks.length-1;i>=0;i--){
+    const k=tasks[i];if(clock<k.t0)continue;
+    const t=Math.min(1,(clock-k.t0)/k.dur);k.update(t);
+    if(t>=1){tasks.splice(i,1);if(k.done)k.done();}
+  }
+  if(camTween){
+    const t=Math.min(1,(clock-camTween.s)/camTween.d),e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+    camera.position.lerpVectors(camTween.p0,camTween.p1,e);controls.target.lerpVectors(camTween.t0,camTween.t1,e);
+    if(t>=1)camTween=null;
+  }
+  if(S.risen&&!REDUCE){inner.rotation.y=Math.sin(clock*0.35)*0.14;}
+  if(S.sel){const p=parts[S.sel];p.mat.emissive.copy(p.base).multiplyScalar(0.18+0.14*Math.sin(clock*4));}
+  if(mitoPulse>0){mitoPulse=Math.max(0,mitoPulse-dt*1.6);parts.mito.mat.emissive.setRGB(0.9*mitoPulse,0.55*mitoPulse,0.1*mitoPulse);}
+  else if(S.sel!=='mito'){parts.mito.mat.emissive.setRGB(0,0,0);}
+  controls.update();
+  renderer.render(scene,camera);
+  if(S.sel&&parts[S.sel].anchor){
+    parts[S.sel].anchor.getWorldPosition(tmp);tmp.project(camera);
+    if(tmp.z<1){pin.hidden=false;pin.textContent=ORG[S.sel].nome;pin.style.left=((tmp.x+1)/2*innerWidth)+'px';pin.style.top=((1-tmp.y)/2*innerHeight)+'px';}
+    else pin.hidden=true;
+  }else pin.hidden=true;
+  requestAnimationFrame(frame);
+}
+/* ---------- demonstração automática: um dedo usando a lição ---------- */
+const finger=$('#finger'),UP=new V3(0,1,0),tmp2=new V3();
+var demo=false;let demoRun=0,fx=innerWidth*0.75,fy=innerHeight*0.7;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const alive=id=>demo&&id===demoRun;
+function guard(id){if(!alive(id))throw 'stop';}
+function placeFinger(){finger.style.transform='translate('+fx+'px,'+fy+'px)';}
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function anim(dur,id,step){return new Promise((res,rej)=>{const t0=performance.now();(function st(now){if(!alive(id)){rej('stop');return;}const t=Math.min(1,(now-t0)/dur);step(ease(t));if(t<1)requestAnimationFrame(st);else res();})(t0);});}
+function until(fn,id){return new Promise((res,rej)=>{(function chk(){if(!alive(id)){rej('stop');return;}if(fn())res();else setTimeout(chk,120);})();});}
+function moveTo(x,y,dur,id){const x0=fx,y0=fy;return anim(dur,id,e=>{fx=x0+(x-x0)*e;fy=y0+(y-y0)*e;placeFinger();});}
+async function tap(id){
+  finger.classList.add('press');
+  const r=document.createElement('span');r.className='ripple';r.style.left=fx+'px';r.style.top=fy+'px';document.body.appendChild(r);setTimeout(()=>r.remove(),700);
+  await wait(170);finger.classList.remove('press');guard(id);
+}
+async function tapEl(sel,id){
+  const el=document.querySelector(sel);if(!el)return;
+  const b=el.getBoundingClientRect();
+  await moveTo(b.left+Math.min(b.width*0.5,70),b.top+b.height*0.6,650,id);
+  await tap(id);const now=document.querySelector(sel);if(now)now.click();await wait(250);guard(id);
+}
+async function tapPart(p,id){
+  parts[p].anchor.getWorldPosition(tmp2);tmp2.project(camera);
+  await moveTo((tmp2.x+1)/2*innerWidth,(1-tmp2.y)/2*innerHeight,700,id);
+  await tap(id);select(p);await wait(1500);guard(id);
+}
+async function drag(dx,angle,dur,id){
+  await until(()=>!camTween,id);
+  finger.classList.add('press');const x0=fx,y0=fy;let last=0;
+  try{await anim(dur,id,e=>{
+    fx=x0+dx*e;fy=y0-Math.sin(e*Math.PI)*14;placeFinger();
+    const a=angle*e,d=a-last;last=a;
+    const off=camera.position.clone().sub(controls.target);off.applyAxisAngle(UP,d);camera.position.copy(controls.target).add(off);
+  });}finally{finger.classList.remove('press');}
+}
+async function runDemo(){
+  const id=++demoRun;demo=true;closeDrawer();
+  resetLesson();goStep(0);rise();updateBar();
+  fx=innerWidth*0.78;fy=innerHeight*0.72;placeFinger();finger.hidden=false;
+  try{
+    await until(()=>S.risen,id);await wait(450);guard(id);
+    await moveTo(innerWidth*0.64,innerHeight*0.6,650,id);
+    await drag(-innerWidth*0.16,0.42,1300,id);await wait(200);guard(id);
+    await drag(innerWidth*0.16,-0.42,1300,id);await wait(300);guard(id);
+    await tapEl('#go1',id);
+    await until(()=>!camTween,id);await wait(300);guard(id);
+    for(const p of ['nucleo','mito','re','golgi','liso','ribo','membrana'])await tapPart(p,id);
+    await wait(1500);guard(id);
+    await tapEl('#infoClose',id);
+    await tapEl('#nextBtn',id);
+    await until(()=>!camTween,id);await wait(1300);guard(id);
+    await moveTo(innerWidth*0.62,innerHeight*0.56,600,id);
+    await drag(-innerWidth*0.14,0.5,1500,id);await wait(500);guard(id);
+    await tapEl('#nextBtn',id);await wait(1000);guard(id);
+    await tapEl('[data-pred="mito"]',id);await wait(600);guard(id);
+    await tapEl('#testBtn',id);
+    await moveTo(innerWidth*0.82,innerHeight*0.78,900,id);
+    await until(()=>S.tested,id);await wait(700);guard(id);
+    await tapEl('#flapBtn',id);await wait(3200);guard(id);
+    await tapEl('#goSum',id);await wait(5000);guard(id);
+    setTimeout(runDemo,0);
+  }catch(e){}
+}
+function stopDemo(){
+  if(!demo)return;demo=false;demoRun++;finger.hidden=true;finger.classList.remove('press');updateBar();
+}
+addEventListener('pointerdown',e=>{if(e.isTrusted)stopDemo();},true);
+addEventListener('keydown',()=>stopDemo(),true);
+addEventListener('wheel',()=>stopDemo(),{capture:true,passive:true});
+
+renderCard(); updateBar(); updateStampChip();
+if(REDUCE){rise();}else{runDemo();}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
