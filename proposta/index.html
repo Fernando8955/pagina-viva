@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Proposta Página Viva</title>
+<meta name="description" content="Apresentação em 2 minutos: 3D na consulta, o caso do paciente no celular e a pré-consulta resumida para o médico.">
+<meta property="og:title" content="Menos tempo explicando. Mais tempo decidindo.">
+<meta property="og:description" content="Apresentação de 2 minutos com áudio: ferramentas para a rotina do coloproctologista.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:opsz,wght@7..72,500;7..72,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: apresentação em "stories", uma tela por vez, coluna de celular (máx. 480px) centralizada.
+   Barras de progresso no topo, conteúdo no meio, controles fixos embaixo. Visual único (consultório escuro + cartões claros). */
+:root{
+  --stage:#132027;--paper:#f7f6f2;--soft:#ecebe5;--ink:#16302b;--ink-2:#55665f;--rule:#d8d7cf;
+  --brand:#2fa58c;--brand-d:#0f6b5c;--amber:#f0b46a;--card-ink:#1b2a33;
+  --f-display:"Literata",Georgia,serif;--f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--f-body);font-size:16.5px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+.app{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
+  padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bars{display:flex;gap:4px;padding:2px 0 10px}
+.bars i{flex:1;height:3px;border-radius:2px;background:rgba(247,246,242,.22);overflow:hidden;position:relative}
+.bars i b{position:absolute;inset:0;width:0;background:var(--paper)}
+.bars i.done b{width:100%}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:8px}
+.brand{font:600 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(247,246,242,.75)}
+.mute{appearance:none;border:1px solid rgba(247,246,242,.3);background:transparent;color:var(--paper);border-radius:999px;padding:8px 12px;font:700 13px var(--f-body);min-height:38px;cursor:pointer}
+.slides{flex:1;min-height:0;position:relative}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;overflow:auto;padding-bottom:8px;opacity:0;transform:translateX(24px);transition:opacity .35s,transform .35s;pointer-events:none}
+.slide.on{opacity:1;transform:none;pointer-events:auto}
+.slide.off-l{transform:translateX(-24px)}
+.eyebrow{font:600 11.5px/1.3 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+h1{font:700 34px/1.08 var(--f-display);margin:0;text-wrap:balance}
+h2{font:700 27px/1.12 var(--f-display);margin:0;text-wrap:balance}
+p{margin:0}
+.sub{color:rgba(247,246,242,.82);font-size:17px}
+.pain{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.pain li{background:rgba(247,246,242,.07);border:1px solid rgba(247,246,242,.12);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.pain li span{font-size:22px;line-height:1}
+.frame{position:relative;flex:1;min-height:340px;border-radius:14px;overflow:hidden;border:1px solid rgba(247,246,242,.15);background:#17232c}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.full{align-self:flex-start;color:var(--paper);font-weight:700;font-size:14px}
+.card{background:var(--paper);color:var(--card-ink);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.card .k{font:600 10.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.card b.t{font:700 19px/1.15 var(--f-display)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--rule);background:var(--soft);border-radius:999px;padding:6px 10px;font-weight:700;font-size:13px;color:var(--card-ink)}
+.chip.on{background:var(--card-ink);color:var(--paper);border-color:var(--card-ink)}
+.btn{appearance:none;border:0;border-radius:10px;background:var(--brand-d);color:#fff;font:700 15px var(--f-body);padding:12px 14px;min-height:46px;cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.light{background:var(--paper);color:var(--card-ink)}
+.btn.ghost{background:transparent;color:var(--paper);border:1px solid rgba(247,246,242,.35)}
+.two{display:grid;grid-template-columns:1fr;gap:10px}
+.arrow{text-align:center;font:600 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:rgba(247,246,242,.7)}
+.mini3d{height:96px;border-radius:10px;background:radial-gradient(circle at 50% 40%,#2b3e4a,#17232c);display:grid;place-items:center;position:relative}
+.mini3d .tube{width:56px;height:84px;position:relative}
+.mini3d .tube::before{content:"";position:absolute;left:8px;right:8px;top:0;height:40px;border-radius:24px 24px 4px 4px;background:linear-gradient(90deg,#e58a8c,#f6c3c2,#e58a8c)}
+.mini3d .tube::after{content:"";position:absolute;left:14px;right:14px;top:38px;height:46px;border-radius:4px;background:repeating-linear-gradient(0deg,#b5473e 0 6px,#c9584e 6px 12px)}
+.mini3d i{position:absolute;top:22px;width:13px;height:22px;border-radius:50%;background:#b8456b;border:2px solid #1b2a33;z-index:2}
+.rows{display:flex;flex-direction:column}
+.rows div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14.5px}
+.rows div:last-child{border-bottom:0}
+.rows span{color:var(--ink-2)}
+.rows b{text-align:right}
+.flag{color:#b4372f}
+.steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;background:rgba(247,246,242,.07);border-radius:12px;padding:12px}
+.steps li::before{counter-increment:s;content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--brand-d);display:grid;place-items:center;font:700 15px var(--f-body)}
+.steps b{display:block}
+.steps span{color:rgba(247,246,242,.78);font-size:15px}
+.note{font-size:12.5px;color:rgba(247,246,242,.6);line-height:1.45}
+.cap{min-height:0;font-size:14.5px;line-height:1.45;color:rgba(247,246,242,.9);background:rgba(0,0,0,.28);border-radius:10px;padding:8px 12px;margin-top:8px}
+.ctrl{display:grid;grid-template-columns:52px 1fr 52px;gap:10px;align-items:center;padding-top:10px}
+.nav{appearance:none;width:52px;height:52px;border-radius:50%;border:1px solid rgba(247,246,242,.3);background:rgba(247,246,242,.08);color:var(--paper);font:700 22px var(--f-body);cursor:pointer}
+.nav:disabled{opacity:.3;cursor:default}
+.play{appearance:none;height:52px;border-radius:999px;border:0;background:var(--paper);color:var(--card-ink);font:700 15.5px var(--f-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.cover{justify-content:center}
+.cover .logo{width:56px;height:56px;border-radius:14px;background:var(--brand-d);display:grid;place-items:center;font:700 26px var(--f-display);color:#fff}
+.cover .start{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+button:focus-visible,a:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bars" id="bars"></div>
+  <div class="head"><span class="brand">Proposta · Página Viva</span><button class="mute" id="mute" hidden>🔈 Som ligado</button></div>
+
+  <div class="slides" id="slides">
+    <!-- 1 capa -->
+    <section class="slide cover" data-say="Olá, doutor. Em dois minutos, vou mostrar três ferramentas pensadas para a rotina do coloproctologista: explicar o tratamento em 3D, mandar ao paciente o caso dele, e receber a pré-consulta já resumida.">
+      <span class="logo" aria-hidden="true">P</span>
+      <span class="eyebrow">Para o Hospital Gastroprocto</span>
+      <h1>Menos tempo explicando. Mais tempo decidindo.</h1>
+      <p class="sub">Três ferramentas para a consulta de coloproctologia, em 2 minutos.</p>
+      <div class="start">
+        <button class="btn light" id="startAudio">▶ Ouvir a apresentação (2 min)</button>
+        <button class="btn ghost" id="startSilent">Ver sem áudio</button>
+      </div>
+    </section>
+    <!-- 2 problema -->
+    <section class="slide" data-say="Todo dia, o médico repete as mesmas explicações. O paciente sai da consulta com medo, sem entender a diferença entre as técnicas. E as dúvidas voltam por telefone.">
+      <span class="eyebrow">O que pesa no consultório</span>
+      <h2>A mesma explicação, várias vezes por dia</h2>
+      <ul class="pain">
+        <li><span>🔁</span><p>Grau, técnica, recuperação: tudo explicado do zero a cada paciente.</p></li>
+        <li><span>😟</span><p>O paciente não entende a diferença entre convencional, THD e laser, e adia a decisão.</p></li>
+        <li><span>📞</span><p>Depois da consulta, as dúvidas voltam por telefone e WhatsApp.</p></li>
+      </ul>
+    </section>
+    <!-- 3 3D ao vivo -->
+    <section class="slide" data-say="Primeiro: o canal anal em 3D. No tablet, o senhor mostra os graus das hemorroidas e o que cada técnica faz: convencional, THD e laser. Toque no modelo para experimentar.">
+      <span class="eyebrow">1 · Na consulta</span>
+      <h2>O tratamento explicado em 3D</h2>
+      <div class="frame"><iframe id="frame3d" title="Modelo 3D do canal anal" loading="lazy" data-src="../hemorroidas/?embed=1"></iframe></div>
+      <a class="full" href="../hemorroidas/" target="_blank" rel="noopener">Abrir em tela cheia ↗</a>
+    </section>
+    <!-- 4 caso do paciente -->
+    <section class="slide" data-say="Segundo: na própria consulta, o senhor marca o grau, os mamilos e a técnica indicada. O paciente recebe pelo WhatsApp um link com o caso dele, para rever em casa com a família. Menos ligações, e mais segurança na decisão.">
+      <span class="eyebrow">2 · Depois da consulta</span>
+      <h2>O paciente leva o caso dele no celular</h2>
+      <div class="two">
+        <div class="card">
+          <span class="k">No tablet do médico</span>
+          <div class="chips"><span class="chip">Grau II</span><span class="chip on">Grau III</span><span class="chip">Grau IV</span></div>
+          <div class="chips"><span class="chip on">Mamilo 3h</span><span class="chip on">Mamilo 7h</span><span class="chip">Mamilo 11h</span></div>
+          <div class="chips"><span class="chip">Convencional</span><span class="chip on">THD</span><span class="chip">Laser</span></div>
+          <span class="btn" style="pointer-events:none">Enviar ao paciente pelo WhatsApp</span>
+        </div>
+        <div class="arrow">↓ o paciente recebe</div>
+        <div class="card">
+          <span class="k">No celular do paciente</span>
+          <b class="t">Seu caso, Maria</b>
+          <div class="mini3d" aria-hidden="true"><div class="tube"></div><i style="left:calc(50% - 16px)"></i><i style="left:calc(50% + 2px)"></i></div>
+          <p style="font-size:14.5px">Hemorroidas grau III. Técnica indicada: <b>THD</b>. Veja no 3D o que será feito e como é a recuperação.</p>
+        </div>
+      </div>
+      <p class="note">Tela de exemplo de como vai ficar.</p>
+    </section>
+    <!-- 5 pré-consulta -->
+    <section class="slide" data-say="Terceiro: antes da consulta, o paciente responde um questionário no celular. O senhor recebe um resumo de uma página, com os escores já calculados. A consulta começa do ponto certo.">
+      <span class="eyebrow">3 · Antes da consulta</span>
+      <h2>A pré-consulta chega resumida</h2>
+      <div class="card">
+        <span class="k">Resumo para o médico · João, 52 anos</span>
+        <div class="rows">
+          <div><span>Sangramento</span><b class="flag">Vivo, 3 vezes por semana</b></div>
+          <div><span>Prolapso</span><b>Sai e volta sozinho</b></div>
+          <div><span>Dor ao evacuar</span><b>6 de 10</b></div>
+          <div><span>Escala de Bristol</span><b>Tipo 2 (fezes duras)</b></div>
+          <div><span>Incontinência (Wexner)</span><b>2 de 20</b></div>
+          <div><span>Uso de anticoagulante</span><b class="flag">Sim</b></div>
+        </div>
+      </div>
+      <p class="note">Respondido pelo paciente no celular antes da consulta. Tela de exemplo.</p>
+    </section>
+    <!-- 6 como começar -->
+    <section class="slide" data-say="Tudo funciona junto com o agendamento e o WhatsApp que vocês já usam. A proposta é um piloto de sessenta dias, com o conteúdo revisado pela sua equipe.">
+      <span class="eyebrow">Como começar</span>
+      <h2>Um piloto simples, sem trocar nada do que já funciona</h2>
+      <ol class="steps">
+        <li><div><b>Conversa de 20 minutos</b><span>Para ajustar ao seu jeito de explicar.</span></div></li>
+        <li><div><b>Conteúdo revisado pela equipe</b><span>Textos, técnicas e o questionário, com a marca do hospital.</span></div></li>
+        <li><div><b>Piloto de 60 dias</b><span>Com os seus pacientes, junto do agendamento e do WhatsApp atuais.</span></div></li>
+      </ol>
+    </section>
+    <!-- 7 fecho -->
+    <section class="slide cover" data-say="Se fizer sentido, posso mostrar ao vivo em vinte minutos. É só responder a mensagem com o melhor horário. Obrigado, doutor.">
+      <span class="eyebrow">Próximo passo</span>
+      <h1>Posso mostrar ao vivo em 20 minutos?</h1>
+      <p class="sub">É só responder a mensagem no WhatsApp com o melhor horário.</p>
+      <div class="start">
+        <a class="btn light" href="../hemorroidas/" target="_blank" rel="noopener">Explorar o 3D completo</a>
+        <button class="btn ghost" id="restart">Ver a apresentação de novo</button>
+      </div>
+      <p class="note">Demonstração. O conteúdo médico é de exemplo e será revisado e aprovado pela equipe do hospital antes de qualquer uso com pacientes.</p>
+    </section>
+  </div>
+
+  <div class="cap" id="cap" hidden></div>
+  <div class="ctrl">
+    <button class="nav" id="prev" aria-label="Voltar">‹</button>
+    <button class="play" id="play"><span id="playIco">▶</span><span id="playTxt">Ouvir</span></button>
+    <button class="nav" id="next" aria-label="Avançar">›</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const slides=[...document.querySelectorAll('.slide')];
+const N=slides.length;
+let i=0,talking=false,muted=false;
+const synth=window.speechSynthesis||null;
+let voice=null;
+function pickVoice(){
+  if(!synth)return;
+  const vs=synth.getVoices().filter(v=>/^pt(-|_)BR/i.test(v.lang)||/portugu[eê]s.*brasil/i.test(v.name));
+  const pref=['Luciana','Google português do Brasil','Francisca','Thalita','Felipe'];
+  voice=vs.find(v=>pref.some(p=>v.name.includes(p)))||vs[0]||null;
+}
+if(synth){pickVoice();synth.onvoiceschanged=pickVoice;}
+$('#bars').innerHTML=slides.map(()=> '<i><b></b></i>').join('');
+const bars=[...document.querySelectorAll('#bars i')];
+
+function show(n,dir){
+  i=Math.max(0,Math.min(N-1,n));
+  slides.forEach((s,k)=>{s.classList.toggle('on',k===i);s.classList.toggle('off-l',k<i);});
+  bars.forEach((b,k)=>{b.classList.toggle('done',k<i);b.querySelector('b').style.width=k<i?'100%':'0';});
+  $('#prev').disabled=i===0;$('#next').disabled=i===N-1;
+  const f=$('#frame3d');if(i===2&&!f.src)f.src=f.dataset.src;
+  if(talking&&!muted)speak();else $('#cap').hidden=true;
+}
+let utter=null,barTimer=null;
+function speak(){
+  if(!synth){return;}
+  synth.cancel();clearInterval(barTimer);
+  const txt=slides[i].dataset.say;
+  $('#cap').textContent=txt;$('#cap').hidden=false;
+  utter=new SpeechSynthesisUtterance(txt);
+  utter.lang='pt-BR';if(voice)utter.voice=voice;utter.rate=1.0;
+  const est=Math.max(4,txt.length/14),t0=performance.now(),bar=bars[i].querySelector('b'),me=i;
+  barTimer=setInterval(()=>{const p=Math.min(1,(performance.now()-t0)/1000/est);bar.style.width=(p*100)+'%';},120);
+  utter.onend=()=>{clearInterval(barTimer);if(!talking||me!==i)return;bar.style.width='100%';
+    if(i<N-1){setTimeout(()=>{if(talking&&me===i)show(i+1);},500);}else{stop();}};
+  synth.speak(utter);
+  setPlay();
+}
+function start(){talking=true;muted=false;$('#mute').hidden=!synth;$('#mute').textContent='🔈 Som ligado';if(!synth){$('#cap').hidden=true;}show(i===0?1:i);if(i===1&&synth)speak();setPlay();}
+function stop(){talking=false;if(synth)synth.cancel();clearInterval(barTimer);setPlay();}
+function setPlay(){$('#playIco').textContent=talking?'❚❚':'▶';$('#playTxt').textContent=talking?'Pausar':(synth?'Ouvir':'Avançar');}
+$('#play').onclick=()=>{if(!synth){show(i+1);return;}talking?stop():(talking=true,$('#mute').hidden=false,speak(),setPlay());};
+$('#startAudio').onclick=()=>{if(!synth){show(1);return;}talking=true;$('#mute').hidden=false;show(0);speak();};
+$('#startSilent').onclick=()=>{stop();show(1);};
+$('#next').onclick=()=>show(i+1);
+$('#prev').onclick=()=>show(i-1);
+$('#restart').onclick=()=>{stop();show(0);};
+$('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'🔇 Sem som':'🔈 Som ligado';if(muted){if(synth)synth.cancel();clearInterval(barTimer);$('#cap').hidden=true;}else if(talking)speak();};
+if(!synth){$('#startAudio').textContent='▶ Começar';$('#playTxt').textContent='Avançar';}
+let sx=null;
+$('#slides').addEventListener('touchstart',e=>{if(e.target.closest('iframe,.frame'))return;sx=e.touches[0].clientX;},{passive:true});
+$('#slides').addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx;sx=null;if(Math.abs(dx)>60)show(i+(dx<0?1:-1));},{passive:true});
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&talking)stop();});
+show(0);
+})();
+</script>
+</body>
+</html>
