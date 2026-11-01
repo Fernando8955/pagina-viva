@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Página Viva Saúde</title>
+<meta name="description" content="Demonstração de ferramentas digitais para hospitais de saúde digestiva: guia interativo de preparo e explicação 3D de tratamentos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,500;7..72,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: página de apresentação em uma coluna; topo com a proposta,
+   dois cartões grandes que abrem as prévias e uma faixa com o que o hospital ganha. */
+:root{
+  --bg:#eef3f1;--card:#ffffff;--soft:#e3ece8;--ink:#16302b;--ink-2:#4d625d;--rule:#d2ddd8;
+  --brand:#0f6b5c;--brand-ink:#ffffff;--stage:#17232c;--amber:#b8620f;--amber-bg:#fbefdf;
+  --f-display:"Literata",Georgia,serif;--f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1816;--card:#16221f;--soft:#1d2c28;--ink:#e6f0ed;--ink-2:#a3b6b0;--rule:#2b3c37;--brand:#3fb59d;--brand-ink:#0c1a17;--amber:#f0a65a;--amber-bg:#3a2a17;color-scheme:dark}}
+*,*::before,*::after{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16.5px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 48px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+.eyebrow{font:600 11.5px/1.3 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+h1{font:700 clamp(30px,5vw,46px)/1.08 var(--f-display);margin:6px 0 10px;text-wrap:balance;max-width:20ch}
+h2{font:700 24px/1.15 var(--f-display);margin:0;text-wrap:balance}
+p{margin:0;max-width:65ch}
+.lead{font-size:18px;color:var(--ink-2)}
+.demo{font:600 11px/1.4 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--amber);background:var(--amber-bg);border-radius:8px;padding:9px 12px;align-self:flex-start}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tool{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--rule);border-radius:16px;overflow:hidden;color:inherit;text-decoration:none;min-width:0}
+.tool:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+.shot{height:200px;display:grid;place-items:center;position:relative;overflow:hidden}
+.shot.prep{background:linear-gradient(160deg,#0f6b5c,#0b4f44)}
+.shot.anat{background:radial-gradient(circle at 50% 40%,#2b3e4a,#17232c)}
+.body{padding:18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.body ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px;color:var(--ink-2);font-size:15.5px}
+.go{margin-top:auto;align-self:flex-start;background:var(--brand);color:var(--brand-ink);border-radius:10px;padding:12px 16px;font-weight:700}
+/* mini telas desenhadas em CSS */
+.phone{width:120px;height:170px;border-radius:18px;background:#f7faf9;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:12px 10px;display:flex;flex-direction:column;gap:6px}
+.phone i{display:block;height:8px;border-radius:4px;background:#d6e4df}
+.phone i.h{height:26px;background:#0f6b5c}
+.phone i.w{width:60%}
+.dots{display:flex;gap:4px;margin-top:4px}
+.dots b{width:16px;height:16px;border-radius:50%}
+.tube{width:90px;height:150px;position:relative}
+.tube::before{content:"";position:absolute;left:15px;right:15px;top:0;height:70px;border-radius:40px 40px 6px 6px;background:linear-gradient(90deg,#e58a8c,#f6c3c2,#e58a8c)}
+.tube::after{content:"";position:absolute;left:25px;right:25px;top:66px;height:84px;border-radius:6px;background:repeating-linear-gradient(0deg,#b5473e 0 9px,#c9584e 9px 18px)}
+.cush{position:absolute;top:40px;width:22px;height:38px;border-radius:50%;background:#b8456b;border:2px solid #1b2a33;z-index:2}
+.gain{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.gain div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.gain b{font:700 18px var(--f-display)}
+.gain span{color:var(--ink-2);font-size:15px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.steps div{background:var(--soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.steps small{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+footer{color:var(--ink-2);font-size:13.5px;border-top:1px solid var(--rule);padding-top:16px}
+@media (max-width:720px){.grid,.gain,.steps{grid-template-columns:1fr}.shot{height:170px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Página Viva · Saúde digestiva</span>
+    <h1>O paciente que entende chega preparado.</h1>
+    <p class="lead">Duas ferramentas para o celular do paciente e para a consulta: um guia de preparo que acompanha cada etapa e uma explicação em 3D do que será feito na cirurgia.</p>
+  </header>
+  <span class="demo">Demonstração · conteúdo médico de exemplo, a ser revisado e aprovado pela equipe do hospital</span>
+
+  <div class="grid">
+    <a class="tool" href="../preparo/">
+      <div class="shot prep" aria-hidden="true">
+        <div class="phone"><i class="h"></i><i></i><i class="w"></i><i></i><div class="dots"><b style="background:#6b4a2b"></b><b style="background:#c7883e"></b><b style="background:#e3bd62"></b><b style="background:#f4e3a1"></b></div><i class="w"></i></div>
+      </div>
+      <div class="body">
+        <span class="eyebrow">Antes do exame</span>
+        <h2>Preparo da colonoscopia</h2>
+        <ul>
+          <li>Passo a passo com o horário de cada dose</li>
+          <li>"Pode comer?" que muda conforme o dia</li>
+          <li>Escala de cores para saber se o preparo ficou bom</li>
+          <li>Lembretes no WhatsApp e painel da equipe com quem está em risco</li>
+        </ul>
+        <span class="go">Abrir a prévia →</span>
+      </div>
+    </a>
+    <a class="tool" href="../hemorroidas/">
+      <div class="shot anat" aria-hidden="true">
+        <div class="tube"><span class="cush" style="left:22px"></span><span class="cush" style="left:34px;top:44px"></span><span class="cush" style="left:46px"></span></div>
+      </div>
+      <div class="body">
+        <span class="eyebrow">Na consulta</span>
+        <h2>Hemorroidas em 3D</h2>
+        <ul>
+          <li>Canal anal em corte: o paciente vê por dentro</li>
+          <li>Os 4 graus, com animação</li>
+          <li>Convencional, THD e laser: o que cada técnica faz</li>
+          <li>Funciona no tablet do médico e no celular do paciente</li>
+        </ul>
+        <span class="go">Abrir a prévia →</span>
+      </div>
+    </a>
+  </div>
+
+  <section class="gain" aria-label="O que o hospital ganha">
+    <div><b>Menos exames remarcados</b><span>Preparo acompanhado de perto: sala, médico e sedação aproveitados.</span></div>
+    <div><b>Menos ligações repetidas</b><span>As dúvidas comuns são respondidas no celular, a qualquer hora.</span></div>
+    <div><b>Decisão mais segura</b><span>O paciente entende a técnica indicada e chega à cirurgia mais tranquilo.</span></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Como começar</span>
+    <div class="steps" style="margin-top:10px">
+      <div><small>1 · Semana 1</small><b>Conteúdo</b><span>A equipe médica revisa os textos, o protocolo de preparo e as técnicas.</span></div>
+      <div><small>2 · Semanas 2 a 4</small><b>Marca e ajustes</b><span>As telas ganham a identidade do hospital e os lembretes entram no WhatsApp.</span></div>
+      <div><small>3 · Semana 5</small><b>Piloto</b><span>Começa com os pacientes de colonoscopia, medindo exames remarcados antes e depois.</span></div>
+    </div>
+  </section>
+
+  <footer>Prévias de demonstração. Não substituem a orientação médica. O preparo e o tratamento de cada paciente são definidos pela equipe do hospital.</footer>
+</div>
+</body>
+</html>

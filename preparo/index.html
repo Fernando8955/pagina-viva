@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Preparo em Dia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:opsz,wght@7..72,500;7..72,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: app de celular centralizado (coluna de 520px), abas Paciente / Hospital.
+   Visual de clínica calma: papel claro, verde-água profundo e um âmbar para o que pede atenção. */
+:root{
+  --bg:#eef3f1;
+  --card:#ffffff;
+  --soft:#e3ece8;
+  --ink:#16302b;
+  --ink-2:#4d625d;
+  --rule:#d2ddd8;
+  --brand:#0f6b5c;
+  --brand-ink:#ffffff;
+  --amber:#b8620f;
+  --amber-bg:#fbefdf;
+  --ok:#1f7a3f;
+  --ok-bg:#e2f3e7;
+  --bad:#b4372f;
+  --bad-bg:#f8e3e1;
+  --f-display:"Literata",Georgia,serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1816;--card:#16221f;--soft:#1d2c28;--ink:#e6f0ed;--ink-2:#a3b6b0;--rule:#2b3c37;
+  --brand:#3fb59d;--brand-ink:#0c1a17;--amber:#f0a65a;--amber-bg:#3a2a17;--ok:#6fcf8f;--ok-bg:#183323;--bad:#f08a80;--bad-bg:#3a1f1c;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1816;--card:#16221f;--soft:#1d2c28;--ink:#e6f0ed;--ink-2:#a3b6b0;--rule:#2b3c37;
+  --brand:#3fb59d;--brand-ink:#0c1a17;--amber:#f0a65a;--amber-bg:#3a2a17;--ok:#6fcf8f;--ok-bg:#183323;--bad:#f08a80;--bad-bg:#3a1f1c;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.demo{font:600 11px/1.3 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--amber);background:var(--amber-bg);border-radius:8px;padding:8px 12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--brand);display:grid;place-items:center;color:var(--brand-ink);font:700 20px var(--f-display)}
+.brand b{font:700 19px/1.1 var(--f-display);display:block}
+.brand small{color:var(--ink-2);font-size:13px}
+.tabs{display:flex;background:var(--soft);border-radius:999px;padding:4px;gap:4px}
+.tab{appearance:none;border:0;background:transparent;color:var(--ink-2);font:700 14px var(--f-body);padding:10px 16px;border-radius:999px;cursor:pointer;min-height:40px}
+.tab[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.eyebrow{font:600 11px/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+h1{font:700 30px/1.1 var(--f-display);margin:0;text-wrap:balance}
+h2{font:700 21px/1.2 var(--f-display);margin:0;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--ink-2)}
+.hello{display:flex;flex-direction:column;gap:6px}
+.examline{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--soft);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
+/* simulador de dia */
+.sim{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.sim::-webkit-scrollbar{display:none}
+.simb{appearance:none;flex:none;border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 12px;font:700 13.5px var(--f-body);cursor:pointer;min-height:44px;text-align:left;line-height:1.2}
+.simb small{display:block;font:500 11px var(--f-mono);color:var(--ink-2)}
+.simb[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.simb[aria-pressed="true"] small{color:var(--brand-ink);opacity:.85}
+/* agora */
+.now{background:var(--brand);color:var(--brand-ink);border:0}
+.now .eyebrow{color:var(--brand-ink);opacity:.8}
+.now h2{color:var(--brand-ink)}
+.now p{opacity:.92}
+.next{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,255,255,.14);border-radius:10px;padding:10px 12px}
+.next b{font:600 22px var(--f-mono);font-variant-numeric:tabular-nums}
+/* linha do tempo */
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:30px 1fr;gap:10px;position:relative;padding-bottom:16px}
+.tl li::before{content:"";position:absolute;left:14px;top:30px;bottom:0;width:2px;background:var(--rule)}
+.tl li:last-child::before{display:none}
+.dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--rule);background:var(--card);display:grid;place-items:center;font:700 13px var(--f-body);color:var(--ink-2)}
+.tl li.cur .dot{border-color:var(--brand);color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 20%,transparent)}
+.tl li.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+.tl .when{font:600 11.5px var(--f-mono);color:var(--ink-2);letter-spacing:.04em;text-transform:uppercase}
+.tl .what{font-weight:700}
+.tl .how{color:var(--ink-2);font-size:15px}
+.chk{appearance:none;margin-top:6px;align-self:flex-start;border:1px solid var(--rule);background:var(--soft);color:var(--ink);border-radius:999px;padding:7px 12px;font:700 13px var(--f-body);cursor:pointer;min-height:36px}
+.chk[aria-pressed="true"]{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+/* pode comer */
+.foods{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.food{appearance:none;display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:12px;padding:10px;font:700 14px var(--f-body);cursor:pointer;min-height:52px;min-width:0}
+.food .em{font-size:24px;flex:none}
+.food .tag{display:block;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.food.yes .tag{color:var(--ok)}
+.food.no .tag{color:var(--bad)}
+.food.no{background:var(--bad-bg);border-color:transparent}
+.why{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:15px}
+/* escala */
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sw{appearance:none;border:2px solid var(--rule);background:var(--card);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:var(--ink);font:700 12.5px var(--f-body);min-width:0}
+.sw .cup{width:42px;height:42px;border-radius:50%;border:2px solid rgba(0,0,0,.15)}
+.sw[aria-pressed="true"]{border-color:var(--brand)}
+.verdict{border-radius:10px;padding:12px 14px;font-size:15.5px}
+.verdict.ok{background:var(--ok-bg);color:var(--ok)}
+.verdict.no{background:var(--amber-bg);color:var(--amber)}
+.verdict b{display:block;font-size:17px;margin-bottom:2px}
+/* whatsapp */
+.phone{background:#e6ddd3;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{background:#fff;color:#1b1b1b;border-radius:10px 10px 10px 2px;padding:9px 11px;max-width:88%;font-size:14.5px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+.msg time{display:block;text-align:right;font-size:11px;color:#6b6b6b;margin-top:2px}
+.msg.me{align-self:flex-end;background:#d9fdd3;border-radius:10px 10px 2px 10px}
+/* faq */
+details{border-top:1px solid var(--rule);padding:10px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+summary::after{content:"+";color:var(--ink-2);font-weight:700}
+details[open] summary::after{content:"–"}
+details p{color:var(--ink-2);margin-top:6px;font-size:15px}
+/* hospital */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font:700 26px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--ink-2);line-height:1.25}
+.kpi.warn b{color:var(--amber)}
+.kpi.bad b{color:var(--bad)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:500px}
+th{text-align:left;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding:8px 6px;border-bottom:1px solid var(--rule)}
+td{padding:10px 6px;border-bottom:1px solid var(--rule);vertical-align:middle}
+td.n{font-variant-numeric:tabular-nums}
+.st{display:inline-block;border-radius:999px;padding:3px 9px;font:700 12px var(--f-body);white-space:nowrap}
+.st.ok{background:var(--ok-bg);color:var(--ok)}
+.st.warn{background:var(--amber-bg);color:var(--amber)}
+.st.bad{background:var(--bad-bg);color:var(--bad)}
+.call{appearance:none;border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:8px;padding:7px 10px;font:700 12.5px var(--f-body);cursor:pointer;min-height:34px}
+.call:disabled{border-color:var(--rule);color:var(--ink-2);cursor:default}
+footer{font-size:13px;color:var(--ink-2);text-align:center;padding-top:6px}
+@media (max-width:420px){.kpis{grid-template-columns:repeat(2,1fr)}h1{font-size:26px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="demo">Demonstração · protocolo de exemplo. O preparo de cada paciente é definido pela equipe médica do hospital.</div>
+  <header>
+    <div class="brand"><span class="logo" aria-hidden="true">P</span><span><b>Preparo em Dia</b><small>Colonoscopia</small></span></div>
+    <div class="tabs" role="tablist" aria-label="Visão">
+      <button class="tab" role="tab" id="tabP" aria-selected="true">Paciente</button>
+      <button class="tab" role="tab" id="tabH" aria-selected="false">Hospital</button>
+    </div>
+  </header>
+
+  <!-- ================= PACIENTE ================= -->
+  <section id="viewP" class="hello" aria-labelledby="tabP" style="display:flex;flex-direction:column;gap:14px">
+    <div class="card hello">
+      <span class="eyebrow">Seu exame</span>
+      <h1>Olá, Maria. Vamos preparar seu intestino juntos.</h1>
+      <div class="examline"><span class="pill">🗓️ Quinta, 8h00</span><span class="pill">🧑‍🤝‍🧑 Vá com acompanhante</span><span class="pill">💤 Com sedação</span></div>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow">Veja como funciona · escolha um momento</span>
+      <div class="sim" id="sim" role="group" aria-label="Simular o dia do preparo"></div>
+    </div>
+
+    <div class="card now" id="now" aria-live="polite"></div>
+
+    <div class="card">
+      <span class="eyebrow">Seu passo a passo</span>
+      <ol class="tl" id="tl"></ol>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow" id="foodEyebrow">Pode comer?</span>
+      <h2 id="foodTitle">Toque no alimento para saber</h2>
+      <div class="foods" id="foods"></div>
+      <div class="why" id="why">Toque em um alimento para ver o motivo.</div>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow">Meu preparo já está bom?</span>
+      <h2>Compare a cor do líquido que sai no vaso</h2>
+      <div class="scale" id="scale"></div>
+      <div class="verdict" id="verdict" hidden></div>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow">Lembretes no WhatsApp</span>
+      <h2>Você não precisa decorar nada</h2>
+      <div class="phone" id="wa"></div>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow">Dúvidas comuns</span>
+      <details><summary>Posso tomar meus remédios de sempre?</summary><p>A maioria, sim, com um pouco de água. Mas anticoagulantes, remédios para diabetes e alguns outros precisam de orientação específica: fale com a equipe antes do preparo.</p></details>
+      <details><summary>Estou com náusea ao tomar o preparo. O que faço?</summary><p>Faça uma pausa de 30 a 60 minutos e continue mais devagar. Se vomitar muito ou não conseguir terminar, chame o hospital pelo WhatsApp.</p></details>
+      <details><summary>Por que preciso de acompanhante?</summary><p>Por causa da sedação, você não pode dirigir nem voltar sozinho para casa no dia do exame.</p></details>
+      <details><summary>Por que o preparo é tão importante?</summary><p>Com o intestino limpo, o médico enxerga toda a parede e consegue achar e retirar pólipos pequenos. Com sujeira, o exame pode precisar ser repetido.</p></details>
+    </div>
+  </section>
+
+  <!-- ================= HOSPITAL ================= -->
+  <section id="viewH" aria-labelledby="tabH" style="display:none;flex-direction:column;gap:14px">
+    <div class="card">
+      <span class="eyebrow">Painel da equipe · exemplo</span>
+      <h1>Colonoscopias de amanhã</h1>
+      <p class="muted">Cada paciente confirma as etapas pelo celular. A equipe vê quem está em risco de chegar mal preparado e liga antes, não depois.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <span class="eyebrow">Pacientes · dados fictícios</span>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Paciente</th><th>Horário</th><th>Dieta</th><th>Doses</th><th>Escala</th><th>Situação</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <span class="eyebrow">O que o hospital ganha</span>
+      <p>• Menos exames remarcados por preparo ruim: sala, médico e sedação aproveitados.</p>
+      <p>• Menos ligações com dúvidas repetidas na central.</p>
+      <p>• Pacientes mais tranquilos, que chegam no horário e com acompanhante.</p>
+    </div>
+  </section>
+
+  <footer><a href="../saude/" style="color:inherit;font-weight:700">← Voltar à apresentação</a> · Prévia de produto · Página Viva · conteúdo médico a ser revisado e aprovado pelo hospital</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const store={get(k){try{return JSON.parse(localStorage.getItem('pd-'+k));}catch(e){return null;}},set(k,v){try{localStorage.setItem('pd-'+k,JSON.stringify(v));}catch(e){}}};
+
+/* Momentos do preparo (exame na quinta às 8h) */
+const MOMENTS=[
+  {id:'d3',label:'Segunda',sub:'3 dias antes',phase:'semres',title:'Comece a dieta sem resíduos',text:'Hoje e amanhã, evite alimentos com casca, semente, folhas e grãos integrais. Beba bastante água.',next:'Comprar o preparo na farmácia',in:'até amanhã'},
+  {id:'d2',label:'Terça',sub:'2 dias antes',phase:'semres',title:'Continue a dieta sem resíduos',text:'Você está indo bem. Hoje é dia de deixar o preparo comprado e separado.',next:'Amanhã: só líquidos claros',in:'em 1 dia'},
+  {id:'d1',label:'Quarta, manhã',sub:'véspera',phase:'liquida',title:'Hoje, só líquidos claros',text:'Água, chá, água de coco, caldo coado e gelatina clara. Nada vermelho ou roxo, nada de leite.',next:'1ª dose do preparo às 19h00',in:'em 11 h'},
+  {id:'d1n',label:'Quarta, 19h',sub:'1ª dose',phase:'liquida',title:'Hora da 1ª dose',text:'Tome o preparo aos poucos, em até 1 hora, e depois beba pelo menos 1 litro de líquidos claros. Fique perto do banheiro.',next:'2ª dose às 03h00',in:'em 8 h'},
+  {id:'d0m',label:'Quinta, 3h',sub:'2ª dose',phase:'liquida',title:'Hora da 2ª dose',text:'Tome a 2ª dose como a primeira. Compare a cor do líquido com a escala logo abaixo.',next:'Jejum total a partir das 06h00',in:'em 3 h'},
+  {id:'d0',label:'Quinta, 6h',sub:'dia do exame',phase:'jejum',title:'Jejum total. Hoje é o dia!',text:'Nada de comida nem líquidos a partir de agora. Leve documento, pedido médico, exames anteriores e a lista dos seus remédios.',next:'Chegar ao hospital às 07h30',in:'em 1 h 30'}
+];
+const STEPS=[
+  {m:0,when:'Seg e ter',what:'Dieta sem resíduos',how:'Arroz branco, macarrão, batata sem casca, ovos, frango e peixe.'},
+  {m:1,when:'Até terça',what:'Comprar o preparo',how:'Conforme a receita entregue pelo hospital.'},
+  {m:2,when:'Quarta, o dia todo',what:'Só líquidos claros',how:'Nada vermelho, roxo ou com leite.'},
+  {m:3,when:'Quarta, 19h00',what:'1ª dose do preparo',how:'Em até 1 hora, depois mais 1 litro de líquidos claros.'},
+  {m:4,when:'Quinta, 03h00',what:'2ª dose do preparo',how:'Compare a cor com a escala.'},
+  {m:5,when:'Quinta, a partir das 06h00',what:'Jejum total',how:'Nem água. Saia de casa com seu acompanhante.'}
+];
+const FOODS={
+  semres:[['🍚','Arroz branco',1,'Pouca fibra: passa pelo intestino sem deixar resíduo.'],['🥔','Batata sem casca',1,'Sem a casca, é de fácil digestão.'],['🍗','Frango',1,'Proteína magra, sem fibras.'],['🥚','Ovo',1,'Pode, cozido ou mexido.'],['🍞','Pão branco',1,'O pão integral não: os grãos deixam resíduo.'],['🥬','Folhas e salada',0,'As fibras das verduras ficam grudadas na parede do intestino.'],['🫘','Feijão',0,'Casca e fibras atrapalham a visão do médico.'],['🍉','Frutas com semente',0,'Sementes de melancia, uva e kiwi entopem o aparelho.'],['🌽','Milho',0,'A casca do milho não é digerida.'],['🥜','Castanhas',0,'Pedaços duros ficam no intestino.']],
+  liquida:[['💧','Água',1,'À vontade. Ajuda a limpar.'],['🍵','Chá claro',1,'Camomila, erva-doce, cidreira: pode.'],['🥥','Água de coco',1,'Ótima para repor sais.'],['🍋','Gelatina amarela',1,'Clara pode. Vermelha não.'],['🍲','Caldo coado',1,'Só o líquido, sem pedaços.'],['🍓','Gelatina vermelha',0,'A cor vermelha pode ser confundida com sangue no exame.'],['🍇','Suco de uva',0,'Cor roxa: confunde a visão do médico.'],['🥛','Leite e iogurte',0,'Deixam resíduo branco na parede do intestino.'],['☕','Café com leite',0,'Café preto pode, com leite não.'],['🍞','Qualquer sólido',0,'Na véspera, só líquidos claros.']],
+  jejum:[['💧','Água',0,'No jejum total, nem água. A sedação exige estômago vazio.'],['💊','Remédio de pressão',1,'Só se a equipe orientou, com um gole pequeno de água.'],['🍬','Bala ou chiclete',0,'Também quebram o jejum.'],['☕','Café',0,'Jejum total: nada de líquidos.']]
+};
+const SCALE=[
+  {c:'radial-gradient(circle at 40% 35%,#6b4a2b,#3e2a17)',n:'Marrom escuro',ok:0,t:'Ainda está no começo. Continue tomando o preparo e os líquidos claros.'},
+  {c:'radial-gradient(circle at 40% 35%,#8a5d32,#5a3b1d)',n:'Marrom com pedaços',ok:0,t:'Ainda há resíduo. Siga bebendo líquidos claros.'},
+  {c:'radial-gradient(circle at 40% 35%,#c7883e,#93602a)',n:'Laranja turvo',ok:0,t:'Melhorando. Continue: o ideal é ficar claro como chá.'},
+  {c:'radial-gradient(circle at 40% 35%,#e3bd62,#c49a3d)',n:'Amarelo turvo',ok:1,t:'Quase lá. Termine a dose e os líquidos que faltam.'},
+  {c:'radial-gradient(circle at 40% 35%,#f4e3a1,#e6cf7d)',n:'Amarelo claro',ok:2,t:'Pronto! Este é o resultado ideal para o exame.'}
+];
+let cur=store.get('m')??2;
+let done=new Set(store.get('done')||[]);
+
+function renderSim(){
+  $('#sim').innerHTML=MOMENTS.map((m,i)=>'<button class="simb" data-i="'+i+'" aria-pressed="'+(i===cur)+'">'+m.label+'<small>'+m.sub+'</small></button>').join('');
+  $('#sim').querySelectorAll('.simb').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;store.set('m',cur);render();});
+  const sel=$('#sim').querySelector('[aria-pressed="true"]');if(sel)sel.scrollIntoView({inline:'nearest',block:'nearest'});
+}
+function renderNow(){
+  const m=MOMENTS[cur];
+  $('#now').innerHTML='<span class="eyebrow">Agora · '+m.label+'</span><h2>'+m.title+'</h2><p>'+m.text+'</p><div class="next"><span>Próximo: '+m.next+'</span><b>'+m.in+'</b></div>';
+}
+function renderTL(){
+  $('#tl').innerHTML=STEPS.map((s,i)=>{
+    const st=done.has(i)?'done':(s.m===cur?'cur':'');
+    return '<li class="'+st+'"><span class="dot">'+(done.has(i)?'✓':i+1)+'</span><div><div class="when">'+s.when+'</div><div class="what">'+s.what+'</div><div class="how">'+s.how+'</div><button class="chk" data-s="'+i+'" aria-pressed="'+done.has(i)+'">'+(done.has(i)?'Feito ✓':'Marcar como feito')+'</button></div></li>';
+  }).join('');
+  $('#tl').querySelectorAll('.chk').forEach(b=>b.onclick=()=>{const i=+b.dataset.s;done.has(i)?done.delete(i):done.add(i);store.set('done',[...done]);renderTL();renderWA();});
+}
+function renderFoods(){
+  const ph=MOMENTS[cur].phase,list=FOODS[ph];
+  $('#foodEyebrow').textContent='Pode comer? · '+({semres:'dieta sem resíduos',liquida:'só líquidos claros',jejum:'jejum total'}[ph]);
+  $('#foods').innerHTML=list.map((f,i)=>'<button class="food '+(f[2]?'yes':'no')+'" data-f="'+i+'"><span class="em" aria-hidden="true">'+f[0]+'</span><span>'+f[1]+'<span class="tag">'+(f[2]?'Pode':'Evite')+'</span></span></button>').join('');
+  $('#why').textContent='Toque em um alimento para ver o motivo.';
+  $('#foods').querySelectorAll('.food').forEach(b=>b.onclick=()=>{const f=list[+b.dataset.f];$('#why').innerHTML='<b>'+f[1]+': '+(f[2]?'pode.':'evite.')+'</b> '+f[3];});
+}
+function renderScale(){
+  const pick=store.get('scale');
+  $('#scale').innerHTML=SCALE.map((s,i)=>'<button class="sw" data-k="'+i+'" aria-pressed="'+(pick===i)+'"><span class="cup" style="background:'+s.c+'"></span>'+(i+1)+'</button>').join('');
+  $('#scale').querySelectorAll('.sw').forEach(b=>b.onclick=()=>{store.set('scale',+b.dataset.k);renderScale();renderWA();});
+  const v=$('#verdict');
+  if(pick==null){v.hidden=true;return;}
+  const s=SCALE[pick];v.hidden=false;v.className='verdict '+(s.ok===2?'ok':'no');
+  v.innerHTML='<b>'+(pick+1)+' · '+s.n+'</b>'+s.t+(s.ok===2?'':' Se depois da 2ª dose ainda estiver assim, chame o hospital no WhatsApp.');
+}
+function renderWA(){
+  const msgs=[
+    ['Seg, 09:00','Bom dia, Maria! Seu preparo começa hoje: dieta sem resíduos. Toque para ver o que pode comer 👉 preparo.link/maria'],
+    ['Ter, 18:00','Já comprou o preparo? Responda SIM quando estiver com ele em casa.'],
+    ['','SIM',true],
+    ['Qua, 08:00','Hoje só líquidos claros 💧 Nada vermelho, roxo ou com leite.'],
+    ['Qua, 18:45','Em 15 minutos: 1ª dose do preparo. Fique perto do banheiro.'],
+    ['Qui, 02:45','Hora da 2ª dose. Depois, me conte a cor pela escala.']
+  ];
+  const pick=store.get('scale');
+  if(pick!=null){msgs.push(['','Escala '+(pick+1),true]);msgs.push(['Qui, 05:10',SCALE[pick].ok===2?'Perfeito! Seu preparo está pronto. Jejum total a partir das 6h. Até já! 🙌':'Obrigado por avisar. Uma enfermeira vai te ligar em instantes para orientar.']);}
+  $('#wa').innerHTML=msgs.map(m=>'<div class="msg'+(m[2]?' me':'')+'">'+m[1]+(m[0]?'<time>'+m[0]+'</time>':'')+'</div>').join('');
+}
+function render(){renderSim();renderNow();renderTL();renderFoods();renderScale();renderWA();}
+
+/* Painel do hospital (dados fictícios) */
+const PTS=[
+  ['Ana S.','07:00','ok','2/2',5],['Carlos M.','07:30','ok','2/2',5],['Maria P.','08:00','ok','2/2',4],['João R.','08:30','ok','1/2',null],
+  ['Lúcia F.','09:00','warn','2/2',2],['Pedro A.','09:30','ok','2/2',5],['Rita C.','10:00','none','0/2',null],['Sérgio L.','10:30','ok','2/2',3],
+  ['Helena B.','11:00','ok','2/2',5],['Marcos T.','13:00','ok','1/2',null]
+];
+function status(p){
+  if(p[2]==='none')return['bad','Sem resposta'];
+  if(p[4]!=null&&p[4]<=3)return['warn','Risco de preparo ruim'];
+  if(p[3]!=='2/2')return['ok','Em andamento'];
+  return['ok','Pronto'];
+}
+function renderH(){
+  const risk=PTS.filter(p=>status(p)[0]!=='ok').length,ready=PTS.filter(p=>status(p)[1]==='Pronto').length;
+  $('#kpis').innerHTML='<div class="kpi"><b>'+PTS.length+'</b><span>exames amanhã</span></div><div class="kpi"><b>'+ready+'</b><span>preparo pronto</span></div><div class="kpi warn"><b>'+PTS.filter(p=>status(p)[0]==='warn').length+'</b><span>em risco</span></div><div class="kpi bad"><b>'+PTS.filter(p=>status(p)[0]==='bad').length+'</b><span>sem resposta</span></div>';
+  $('#rows').innerHTML=PTS.map((p,i)=>{const s=status(p);return '<tr><td>'+p[0]+'</td><td class="n">'+p[1]+'</td><td>'+(p[2]==='none'?'—':'✓')+'</td><td class="n">'+p[3]+'</td><td class="n">'+(p[4]==null?'—':p[4]+'/5')+'</td><td><span class="st '+s[0]+'">'+s[1]+'</span></td><td>'+(s[0]==='ok'?'':'<button class="call" data-r="'+i+'">Ligar</button>')+'</td></tr>';}).join('');
+  $('#rows').querySelectorAll('.call').forEach(b=>b.onclick=()=>{b.textContent='Contato registrado';b.disabled=true;});
+}
+
+/* Abas */
+function tab(h){
+  $('#tabP').setAttribute('aria-selected',!h);$('#tabH').setAttribute('aria-selected',h);
+  $('#viewP').style.display=h?'none':'flex';$('#viewH').style.display=h?'flex':'none';
+  store.set('tab',h);
+}
+$('#tabP').onclick=()=>tab(false);$('#tabH').onclick=()=>tab(true);
+render();renderH();tab(!!store.get('tab'));
+})();
+</script>
+
+</body>
+</html>
