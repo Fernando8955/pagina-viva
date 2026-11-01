@@ -819,6 +819,12 @@ $('#infoClose').onclick=()=>select(null);
 function pageImage(sp,side){
   const c=document.createElement('canvas');c.width=2048;c.height=2800;const ctx=c.getContext('2d');ctx.scale(2,2);
   drawPage(sp,side,{width:1024,height:1400,getContext:()=>ctx});
+  if(side==='R'){
+    ctx.fillStyle='rgba(246,246,241,.94)';ctx.strokeStyle='#1d2742';ctx.lineWidth=3;ctx.setLineDash([10,8]);
+    ctx.fillRect(150,520,724,300);ctx.strokeRect(150,520,724,300);ctx.setLineDash([]);
+    ctx.fillStyle='#1d2742';ctx.textAlign='center';ctx.font='italic 56px '+DISPLAY;ctx.fillText('A figura desta página é 3D',512,625);
+    ctx.font='30px '+BODY;ctx.fillStyle='#56607a';ctx.fillText('Toque em “Voltar ao 3D” para girar',512,695);ctx.fillText('e explorar a célula.',512,740);ctx.textAlign='left';
+  }
   return c.toDataURL('image/jpeg',0.9);
 }
 function openReader(side){
